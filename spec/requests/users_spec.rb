@@ -18,12 +18,17 @@ RSpec.describe 'Users API', type: :request do
 
       response '201', 'user created' do
         let(:user) { { name: 'John Doe', email: 'john@example.com', password: 'password123', password_confirmation: 'password123' } }
-        run_test!
+        run_test! do
+          expect(JSON.parse(response.body)).to include('token', 'user')
+          expect(JSON.parse(response.body)['user']).to include('id', 'name', 'email')
+        end
       end
 
       response '422', 'unprocessable entity' do
         let(:user) { { name: '', email: '', password: '', password_confirmation: '' } }
-        run_test!
+        run_test! do
+          expect(JSON.parse(response.body)).to include('errors')
+        end
       end
     end
   end
@@ -44,12 +49,17 @@ RSpec.describe 'Users API', type: :request do
       response '200', 'login successful' do
         let!(:user) { User.create!(name: 'John Doe', email: 'john@example.com', password: 'password123') }
         let(:credentials) { { email: 'john@example.com', password: 'password123' } }
-        run_test!
+        run_test! do
+          expect(JSON.parse(response.body)).to include('token', 'user')
+          expect(JSON.parse(response.body)['user']).to include('id', 'name', 'email')
+        end
       end
 
       response '401', 'unauthorized' do
         let(:credentials) { { email: 'john@example.com', password: 'wrongpassword' } }
-        run_test!
+        run_test! do
+          expect(JSON.parse(response.body)).to include('error')
+        end
       end
     end
   end
