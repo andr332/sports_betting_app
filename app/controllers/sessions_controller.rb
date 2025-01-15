@@ -13,7 +13,7 @@ class SessionsController < ApplicationController
 
   def generate_token(user)
     payload = { user_id: user.id, exp: 24.hours.from_now.to_i }
-    secret_key = Rails.application.secrets.secret_key_base
+    secret_key = ENV['JWT_SECRET'] || Rails.application.secrets.secret_key_base
     JWT.encode(payload, secret_key)
   end
 end
