@@ -42,6 +42,7 @@ RSpec.describe 'Users API', type: :request do
       }
 
       response '200', 'login successful' do
+        let!(:user) { User.create!(name: 'John Doe', email: 'john@example.com', password: 'password123') }
         let(:credentials) { { email: 'john@example.com', password: 'password123' } }
         run_test!
       end
