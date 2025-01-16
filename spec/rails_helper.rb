@@ -2,14 +2,13 @@ require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
 
-# Prevent tests from running in production mode
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
 require 'sidekiq/testing'
-# Ensure Sidekiq jobs run immediately in test environment
+
 Sidekiq::Testing.inline!
 
-# Check for pending migrations
+
 begin
   ActiveRecord::Migration.maintain_test_schema!
 rescue ActiveRecord::PendingMigrationError => e
@@ -22,7 +21,7 @@ RSpec.configure do |config|
   # Path for test fixtures
   config.fixture_path = "#{::Rails.root}/spec/fixtures"
 
-  # Use transactional fixtures for each example
+
   config.use_transactional_fixtures = true
 
   # Infer test types (e.g., `:controller`, `:model`) from file location
@@ -31,13 +30,13 @@ RSpec.configure do |config|
   # Filter Rails-specific backtrace
   config.filter_rails_from_backtrace!
 
-  # Include FactoryBot methods for cleaner syntax
+
   config.include FactoryBot::Syntax::Methods
 
-  # DatabaseCleaner configuration (if you need additional cleaning)
+
   config.before(:suite) do
     DatabaseCleaner.strategy = :transaction
-    DatabaseCleaner.clean_with(:truncation) # Clean the database before the suite runs
+    DatabaseCleaner.clean_with(:truncation)
   end
 
   config.around(:each) do |example|

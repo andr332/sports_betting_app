@@ -51,7 +51,7 @@ class Event < ApplicationRecord
   end
 
   def update_status_based_on_time
-    return if self.invalid?  # ✅ Prevents changes if the model is invalid
+    return if self.invalid?  
 
     if start_time.past? && status != 'completed'
       self.status = 'completed'

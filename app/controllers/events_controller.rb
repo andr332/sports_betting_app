@@ -25,20 +25,16 @@ class EventsController < ApplicationController
   end
 
 
-  def create
-    Rails.logger.info "🔍 CREATE EVENT - Params received: #{params.inspect}"  # ✅ Log all params received
-    @event = Event.new(event_params)
+def create
+  @event = Event.new(event_params)
 
-    if @event.save
-      Rails.logger.info "✅ EVENT CREATED SUCCESSFULLY: #{@event.inspect}"
-      render json: @event, status: :created
-    else
-      Rails.logger.error "🚨 EVENT VALIDATION FAILED: #{@event.errors.full_messages.join(', ')}"
-      render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
-    end
+  if @event.save
+    render json: @event, status: :created
+  else
+    puts @event.errors.full_messages
+    render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
   end
-
-
+end
 
 
   def update
@@ -52,7 +48,7 @@ class EventsController < ApplicationController
     end
   end
 
-  # New action to update only the result field
+
   def update_result
     return render json: { error: 'Event not found' }, status: :not_found if @event.nil?
 

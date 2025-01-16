@@ -1,7 +1,7 @@
 require 'swagger_helper'
 
 RSpec.describe 'Users API', type: :request do
-  # Signup Endpoint
+
   path '/signup' do
     post 'User Signup' do
       tags 'Users'
@@ -94,7 +94,7 @@ RSpec.describe 'Users API', type: :request do
         run_test! do
           parsed_body = JSON.parse(response.body)
           expect(parsed_body).to include('error')
-          expect(parsed_body['error']).to eq('Invalid email or password') # Optional: Ensure specific error message
+          expect(parsed_body['error']).to eq('Invalid email or password')
         end
       end
     end
@@ -106,7 +106,7 @@ RSpec.describe 'Users API', type: :request do
     get 'Get User Profile' do
       tags 'Users'
       produces 'application/json'
-      security [{ bearerAuth: [] }] # Requires authentication
+      security [{ bearerAuth: [] }]
 
       response '200', 'profile retrieved' do
         let!(:user) { User.create!(name: 'John Doe', email: 'john@example.com', password: 'password123') }
@@ -117,7 +117,7 @@ RSpec.describe 'Users API', type: :request do
       end
 
       response '401', 'unauthorized' do
-        let(:Authorization) { nil } # No token provided
+        let(:Authorization) { nil }
         run_test! do
           expect(JSON.parse(response.body)).to include('error')
         end
@@ -143,7 +143,7 @@ RSpec.describe 'Users API', type: :request do
               password: { type: :string },
               password_confirmation: { type: :string }
             },
-            required: ['name', 'email'] # Password fields are optional for profile updates
+            required: ['name', 'email']
           }
         }
       }
@@ -198,7 +198,7 @@ RSpec.describe 'Users API', type: :request do
   path '/profile' do
     delete 'Delete User Account' do
       tags 'Users'
-      security [{ bearerAuth: [] }] # Requires authentication
+      security [{ bearerAuth: [] }] 
 
       response '200', 'account deleted' do
         let!(:user) { User.create!(name: 'John Doe', email: 'john@example.com', password: 'password123') }

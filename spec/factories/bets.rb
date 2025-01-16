@@ -3,7 +3,7 @@ FactoryBot.define do
     amount { 100 }
     odds { 2.5 }
     status { "pending" }
-    predicted_outcome { "win" } # Must match one of the allowed values in Event model
+    predicted_outcome { "win" }
     association :user
     association :event
   end

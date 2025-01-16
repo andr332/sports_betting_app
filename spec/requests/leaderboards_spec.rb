@@ -9,7 +9,7 @@ RSpec.describe "Leaderboards API", type: :request do
   end
 
   before do
-    # Create leaderboard entries for testing
+
     create_list(:leaderboard, 10, total_winnings: rand(100..1000), user: create(:user))
   end
 
@@ -26,7 +26,7 @@ RSpec.describe "Leaderboards API", type: :request do
           expect(response).to have_http_status(:ok)
           parsed_body = JSON.parse(response.body)
           expect(parsed_body).to be_an(Array)
-          expect(parsed_body.size).to eq(10) # Assuming the API returns the top 10 players
+          expect(parsed_body.size).to eq(10) 
           expect(parsed_body.first).to include('id', 'name', 'total_winnings')
         end
       end

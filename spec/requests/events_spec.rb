@@ -4,7 +4,6 @@ RSpec.describe "Events API", type: :request do
   let(:user) { create(:user) }
   let!(:event) { create(:event, name: 'Basketball Game', start_time: Time.now + 1.day, odds: 2.5, status: 'upcoming', result: nil) }
 
-  # Create bets associated with the event
   let!(:bet1) { create(:bet, user: user, event: event, amount: 100, odds: 2.5, predicted_outcome: "win") }
   let!(:bet2) { create(:bet, user: user, event: event, amount: 50, odds: 2.1, predicted_outcome: "lose") }
 
@@ -14,10 +13,10 @@ RSpec.describe "Events API", type: :request do
 
   let(:invalid_attributes) do
     {
-      name: nil,  # Invalid because `name` is nil (required field)
+      name: nil,
       start_time: Time.now + 2.days,
-      odds: -1,   # Invalid because `odds` cannot be negative
-      status: 'invalid_status',  # Invalid because `status` should be one of the valid options
+      odds: -1,
+      status: 'invalid_status',
       result: nil
     }
   end
@@ -31,7 +30,6 @@ RSpec.describe "Events API", type: :request do
 
   let(:Authorization) { auth_headers["Authorization"] }
 
-  # List Events (Include bets_count in response)
   path '/events' do
     get 'List all events' do
       tags 'Events'
@@ -46,8 +44,8 @@ RSpec.describe "Events API", type: :request do
           expect(json_response.size).to be > 0
 
           first_event = json_response.first
-          expect(first_event).to include('bets_count') # ✅ Ensure bets_count is included
-          expect(first_event['bets_count']).to eq(2)  # ✅ 2 bets were created for this event
+          expect(first_event).to include('bets_count')
+          expect(first_event['bets_count']).to eq(2)  
         end
       end
     end
@@ -68,8 +66,8 @@ RSpec.describe "Events API", type: :request do
 
           json_response = JSON.parse(response.body)
           expect(json_response['name']).to eq(event.name)
-          expect(json_response).to include('bets_count') # ✅ Ensure bets_count is included
-          expect(json_response['bets_count']).to eq(2)  # ✅ Should match the created bets
+          expect(json_response).to include('bets_count')
+          expect(json_response['bets_count']).to eq(2)
         end
       end
 
@@ -99,12 +97,12 @@ path '/events' do
     }
 
     response '201', 'event created' do
-      let(:event_params) { { event: valid_attributes } }  # ✅ Ensure correct wrapping
+      let(:event_params) { { event: valid_attributes } }
 
       before do
         post '/events',
-             params: event_params.to_json,  # ✅ Send JSON
-             headers: auth_headers.merge({ "CONTENT_TYPE" => "application/json" })  # ✅ Ensure JSON headers
+             params: event_params.to_json,
+             headers: auth_headers.merge({ "CONTENT_TYPE" => "application/json" })
       end
 
       run_test! do
@@ -112,7 +110,7 @@ path '/events' do
         json_response = JSON.parse(response.body)
 
         expect(json_response['name']).to eq(valid_attributes[:name])
-        expect(json_response['result']).to be_nil  # Ensure result is nil when created
+        expect(json_response['result']).to be_nil
       end
     end
   end

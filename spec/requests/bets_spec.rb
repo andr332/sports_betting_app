@@ -34,7 +34,7 @@ RSpec.describe "Bets API", type: :request do
       end
 
       response '401', 'Unauthorized request' do
-        let(:Authorization) { nil } # No token provided
+        let(:Authorization) { nil } 
 
         run_test! do
           expect(response).to have_http_status(:unauthorized)

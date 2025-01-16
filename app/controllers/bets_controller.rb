@@ -1,7 +1,7 @@
 class BetsController < ApplicationController
   include AuthenticateRequest
 
-  # Fetch all bets for the authenticated user (with event name & result)
+
   def index
     @bets = current_user.bets.includes(:event)
     render json: @bets.as_json(
@@ -25,7 +25,7 @@ class BetsController < ApplicationController
     end
   end
 
-  # Fetch a single bet by its ID for the authenticated user
+
   def show
     @bet = current_user.bets.includes(:event).find_by(id: params[:id])
 
@@ -39,7 +39,7 @@ class BetsController < ApplicationController
     end
   end
 
-  # Place a new bet
+
   def create
     @bet = current_user.bets.new(bet_params)
 

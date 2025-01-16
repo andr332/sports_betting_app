@@ -4,6 +4,6 @@ FactoryBot.define do
     start_time { Time.now + 1.hour }
     odds { 1.8 }
     status { "upcoming" }
-    result { 'win' } # Default to nil for new events
+    result { 'win' }
   end
 end
