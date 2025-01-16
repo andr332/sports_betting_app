@@ -337,25 +337,30 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "password_confirmation": {
-                    "type": "string"
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "password_confirmation": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "email",
+                      "password",
+                      "password_confirmation"
+                    ]
                   }
-                },
-                "required": [
-                  "name",
-                  "email",
-                  "password",
-                  "password_confirmation"
-                ]
+                }
               }
             }
           }
@@ -442,6 +447,9 @@
         "responses": {
           "200": {
             "description": "profile updated"
+          },
+          "422": {
+            "description": "unprocessable entity"
           }
         },
         "requestBody": {
@@ -450,23 +458,28 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "email": {
-                    "type": "string"
-                  },
-                  "password": {
-                    "type": "string"
-                  },
-                  "password_confirmation": {
-                    "type": "string"
+                  "user": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "password_confirmation": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "email"
+                    ]
                   }
-                },
-                "required": [
-                  "name",
-                  "email"
-                ]
+                }
               }
             }
           }

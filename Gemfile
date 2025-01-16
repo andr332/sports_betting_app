@@ -20,9 +20,8 @@ gem 'redis', '~> 4.0'
 # gem 'image_processing', '~> 1.2'
 
 
-group :test do
+
   gem 'sidekiq'
-end
 
 
 

@@ -6,19 +6,35 @@ RSpec.describe 'Users API', type: :request do
     post 'User Signup' do
       tags 'Users'
       consumes 'application/json'
+
       parameter name: :user, in: :body, schema: {
         type: :object,
         properties: {
-          name: { type: :string },
-          email: { type: :string },
-          password: { type: :string },
-          password_confirmation: { type: :string }
-        },
-        required: ['name', 'email', 'password', 'password_confirmation']
+          user: {
+            type: :object,
+            properties: {
+              name: { type: :string },
+              email: { type: :string },
+              password: { type: :string },
+              password_confirmation: { type: :string }
+            },
+            required: ['name', 'email', 'password', 'password_confirmation']
+          }
+        }
       }
 
       response '201', 'user created' do
-        let(:user) { { name: 'John Doe', email: 'john@example.com', password: 'password123', password_confirmation: 'password123' } }
+        let(:user) do
+          {
+            user: {
+              name: 'John Doe',
+              email: 'john@example.com',
+              password: 'password123',
+              password_confirmation: 'password123'
+            }
+          }
+        end
+
         run_test! do
           parsed_body = JSON.parse(response.body)
           expect(parsed_body).to include('token', 'user')
@@ -27,9 +43,17 @@ RSpec.describe 'Users API', type: :request do
       end
 
       response '422', 'unprocessable entity' do
-        # Ensure no Authorization header is set
-        let(:headers) { {} }
-        let(:user) { { name: '', email: '', password: '', password_confirmation: '' } }
+        let(:user) do
+          {
+            user: {
+              name: '',
+              email: '',
+              password: '',
+              password_confirmation: ''
+            }
+          }
+        end
+
         run_test! do
           parsed_body = JSON.parse(response.body)
           expect(parsed_body).to include('errors')
@@ -37,6 +61,7 @@ RSpec.describe 'Users API', type: :request do
       end
     end
   end
+
 
 
   # Login Endpoint
@@ -106,27 +131,67 @@ RSpec.describe 'Users API', type: :request do
       tags 'Users'
       consumes 'application/json'
       security [{ bearerAuth: [] }]
+
       parameter name: :user, in: :body, schema: {
         type: :object,
         properties: {
-          name: { type: :string },
-          email: { type: :string },
-          password: { type: :string },
-          password_confirmation: { type: :string }
-        },
-        required: ['name', 'email'] # Add 'password' if necessary
+          user: {
+            type: :object,
+            properties: {
+              name: { type: :string },
+              email: { type: :string },
+              password: { type: :string },
+              password_confirmation: { type: :string }
+            },
+            required: ['name', 'email'] # Password fields are optional for profile updates
+          }
+        }
       }
 
       response '200', 'profile updated' do
         let!(:user_record) { User.create!(name: 'John Doe', email: 'john@example.com', password: 'password123') }
         let(:Authorization) { "Bearer #{JWT.encode({ user_id: user_record.id }, ENV.fetch('JWT_SECRET', 'test_secret_key'))}" }
-        let(:user) { { name: 'Updated Name', email: 'updated@example.com', password: 'newpassword123', password_confirmation: 'newpassword123' } }
+
+        let(:user) do
+          {
+            user: {
+              name: 'Updated Name',
+              email: 'updated@example.com',
+              password: 'newpassword123',
+              password_confirmation: 'newpassword123'
+            }
+          }
+        end
+
         run_test! do
-          expect(JSON.parse(response.body)).to include('id', 'name', 'email')
+          parsed_body = JSON.parse(response.body)
+          expect(parsed_body).to include('id', 'name', 'email')
+        end
+      end
+
+      response '422', 'unprocessable entity' do
+        let!(:user_record) { User.create!(name: 'John Doe', email: 'john@example.com', password: 'password123') }
+        let(:Authorization) { "Bearer #{JWT.encode({ user_id: user_record.id }, ENV.fetch('JWT_SECRET', 'test_secret_key'))}" }
+
+        let(:user) do
+          {
+            user: {
+              name: '',
+              email: '',
+              password: '',
+              password_confirmation: ''
+            }
+          }
+        end
+
+        run_test! do
+          parsed_body = JSON.parse(response.body)
+          expect(parsed_body).to include('errors')
         end
       end
     end
   end
+
 
 
   # Delete Profile Endpoint

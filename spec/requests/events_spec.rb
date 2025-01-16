@@ -72,9 +72,8 @@ RSpec.describe "Events API", type: :request do
           start_time: { type: :string, format: :datetime },
           odds: { type: :number },
           status: { type: :string }
-          # result is removed from the body for creation
         },
-        required: ['name', 'start_time', 'odds', 'status']  # result is not required here
+        required: ['name', 'start_time', 'odds', 'status']  
       }
 
       response '201', 'event created' do

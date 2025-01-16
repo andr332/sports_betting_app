@@ -53,12 +53,10 @@ class UsersController < ApplicationController
 
   private
 
-  # Strong Parameters for User Creation and Update
   def user_params
-    params.permit(:name, :email, :password, :password_confirmation)
+    params.require(:user).permit(:name, :email, :password, :password_confirmation)
   end
 
-  # Generate a JWT for the User
   def generate_token(user)
     payload = { user_id: user.id, exp: 24.hours.from_now.to_i }
     secret_key = ENV.fetch('JWT_SECRET', Rails.application.secrets.secret_key_base)
