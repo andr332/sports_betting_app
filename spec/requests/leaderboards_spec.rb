@@ -27,10 +27,7 @@ RSpec.describe "Leaderboards API", type: :request do
           parsed_body = JSON.parse(response.body)
           expect(parsed_body).to be_an(Array)
           expect(parsed_body.size).to eq(10) # Assuming the API returns the top 10 players
-
-          # Expecting the 'user' object to contain 'id', 'name' and checking 'total_winnings' at root level
-          expect(parsed_body.first['user']).to include('id', 'name')
-          expect(parsed_body.first).to include('total_winnings')
+          expect(parsed_body.first).to include('id', 'name', 'total_winnings')
         end
       end
 
