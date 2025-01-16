@@ -20,11 +20,23 @@ gem 'redis', '~> 4.0'
 # gem 'image_processing', '~> 1.2'
 
 
+group :test do
+  gem 'sidekiq'
+end
+
+
+
 gem 'jwt'
 
 gem 'bcrypt', '~> 3.1.7'
 
 gem 'dotenv-rails', groups: [:development, :test]
+
+
+group :development do
+  gem 'foreman'
+end
+
 
 
 gem 'rswag-ui'
@@ -48,6 +60,7 @@ group :development, :test do
   gem 'factory_bot_rails'
   gem 'faker'
 end
+
 
 group :development do
   gem 'listen', '~> 3.3'
