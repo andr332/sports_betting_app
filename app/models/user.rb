@@ -1,19 +1,26 @@
 class User < ApplicationRecord
   has_secure_password
 
-  # Validations
-  validates :email, presence: true, uniqueness: true
+
+  validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :password, presence: true, length: { minimum: 6 }
 
-  # Associations
+
   has_many :bets, dependent: :destroy
   has_one :leaderboard, dependent: :destroy
+
+  before_save :downcase_email
 
   after_commit :publish_user_created, on: :create
   after_commit :publish_user_updated, on: :update
   after_destroy :publish_user_deleted
 
   private
+
+  def downcase_email
+    self.email = email.to_s.downcase if email.present?
+  end
+
 
   def publish_user_created
     redis = Redis.new(url: ENV['REDIS_URL'])

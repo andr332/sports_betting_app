@@ -1,8 +1,7 @@
 class UsersController < ApplicationController
   include AuthenticateRequest
-  skip_before_action :authenticate_user, only: [:create]
+  skip_before_action :authenticate_user!, only: [:create]
 
-  # User Signup
   def create
     user = User.new(user_params)
     if user.save
@@ -20,7 +19,6 @@ class UsersController < ApplicationController
     end
   end
 
-  # Protected Profile Endpoint
   def profile
     render json: {
       id: @current_user.id,
@@ -29,7 +27,6 @@ class UsersController < ApplicationController
     }
   end
 
-  # Update Profile
   def update_profile
     if @current_user.update(user_params)
       render json: {
@@ -42,7 +39,6 @@ class UsersController < ApplicationController
     end
   end
 
-  # Delete Account
   def destroy
     if @current_user.destroy
       render json: { message: 'Account deleted successfully' }, status: :ok

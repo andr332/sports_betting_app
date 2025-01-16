@@ -5,7 +5,7 @@ require_relative '../config/environment'
 # Prevent tests from running in production mode
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
-require 'sidekiq/testing' 
+require 'sidekiq/testing'
 # Ensure Sidekiq jobs run immediately in test environment
 Sidekiq::Testing.inline!
 
@@ -45,4 +45,12 @@ RSpec.configure do |config|
       example.run
     end
   end
+
+  # Configure Shoulda Matchers
+Shoulda::Matchers.configure do |config|
+  config.integrate do |with|
+    with.test_framework :rspec
+    with.library :rails
+  end
+end
 end

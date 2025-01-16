@@ -201,6 +201,8 @@ GEM
     rswag-ui (2.13.0)
       actionpack (>= 3.1, < 7.2)
       railties (>= 3.1, < 7.2)
+    shoulda-matchers (5.3.0)
+      activesupport (>= 5.2.0)
     sidekiq (7.3.7)
       connection_pool (>= 2.3.0)
       logger
@@ -246,6 +248,7 @@ DEPENDENCIES
   rswag-api
   rswag-specs
   rswag-ui
+  shoulda-matchers (~> 5.0)
   sidekiq
   tzinfo-data
 

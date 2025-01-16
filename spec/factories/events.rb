@@ -1,8 +1,9 @@
 FactoryBot.define do
   factory :event do
-    name { 'Football Match' }
-    start_time { Time.now + 1.day }
-    odds { 2.5 }
-    status { 'upcoming' }
+    name { "Championship Final" }
+    start_time { Time.now + 1.hour }
+    odds { 1.8 }
+    status { "upcoming" }
+    result { 'win' } # Default to nil for new events
   end
 end
