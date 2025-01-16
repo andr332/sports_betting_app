@@ -196,7 +196,6 @@ GEM
     rswag-ui (2.13.0)
       actionpack (>= 3.1, < 7.2)
       railties (>= 3.1, < 7.2)
-    spring (4.2.1)
     sprockets (4.2.1)
       concurrent-ruby (~> 1.0)
       rack (>= 2.2.4, < 4)
@@ -236,7 +235,6 @@ DEPENDENCIES
   rswag-api
   rswag-specs
   rswag-ui
-  spring
   tzinfo-data
 
 RUBY VERSION

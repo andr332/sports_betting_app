@@ -21,7 +21,7 @@ class BetsController < ApplicationController
   private
 
   def bet_params
-    params.require(:bet).permit(:amount, :odds, :status, :event_id)
+    params.require(:bet).permit(:amount, :odds, :status, :event_id, :predicted_outcome) # ✅ Added predicted_outcome
   end
 
   def authenticate_user!
@@ -37,7 +37,6 @@ class BetsController < ApplicationController
     JWT.decode(token, secret_key).first.symbolize_keys
   end
 
-  # Define current_user manually
   def current_user
     @current_user
   end

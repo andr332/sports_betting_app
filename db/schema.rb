@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_01_16_003514) do
+ActiveRecord::Schema.define(version: 2025_01_16_132731) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -21,9 +21,10 @@ ActiveRecord::Schema.define(version: 2025_01_16_003514) do
     t.uuid "event_id", null: false
     t.decimal "amount"
     t.decimal "odds"
-    t.string "status"
+    t.string "status", default: "pending"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.string "predicted_outcome"
     t.index ["event_id"], name: "index_bets_on_event_id"
     t.index ["user_id"], name: "index_bets_on_user_id"
   end
@@ -35,6 +36,7 @@ ActiveRecord::Schema.define(version: 2025_01_16_003514) do
     t.datetime "updated_at", precision: 6, null: false
     t.decimal "odds", precision: 10, scale: 2
     t.string "status", default: "upcoming", null: false
+    t.string "result"
   end
 
   create_table "leaderboards", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

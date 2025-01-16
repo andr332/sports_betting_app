@@ -50,18 +50,18 @@
                   "odds": {
                     "type": "number"
                   },
-                  "status": {
+                  "event_id": {
                     "type": "string"
                   },
-                  "event_id": {
+                  "predicted_outcome": {
                     "type": "string"
                   }
                 },
                 "required": [
                   "amount",
                   "odds",
-                  "status",
-                  "event_id"
+                  "event_id",
+                  "predicted_outcome"
                 ]
               }
             }
@@ -189,6 +189,72 @@
           },
           "404": {
             "description": "event not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update an event",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of the event",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "event updated"
+          },
+          "404": {
+            "description": "event not found"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "start_time": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "odds": {
+                    "type": "number"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "result": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "start_time",
+                  "odds",
+                  "status",
+                  "result"
+                ]
+              }
+            }
           }
         }
       },
