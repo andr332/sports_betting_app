@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_01_16_142213) do
+ActiveRecord::Schema.define(version: 2025_01_16_213258) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -30,13 +30,16 @@ ActiveRecord::Schema.define(version: 2025_01_16_142213) do
   end
 
   create_table "events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "name"
-    t.datetime "start_time"
+    t.string "name", null: false
+    t.datetime "start_time", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-    t.decimal "odds", precision: 10, scale: 2
+    t.decimal "odds", precision: 10, scale: 2, null: false
     t.string "status", default: "upcoming", null: false
     t.string "result"
+    t.check_constraint "(result IS NULL) OR ((result)::text = ANY ((ARRAY['win'::character varying, 'lose'::character varying, 'draw'::character varying])::text[]))", name: "check_result_inclusion"
+    t.check_constraint "(status)::text = ANY ((ARRAY['upcoming'::character varying, 'ongoing'::character varying, 'completed'::character varying])::text[])", name: "check_status_inclusion"
+    t.check_constraint "odds > (0)::numeric", name: "check_odds_positive"
   end
 
   create_table "leaderboards", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

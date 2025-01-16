@@ -1,11 +1,13 @@
 class Event < ApplicationRecord
   has_many :bets, dependent: :destroy
 
-  validates :name, presence: true
-  validates :start_time, presence: true
-  validates :odds, presence: true, numericality: { greater_than: 0 }
-  validates :status, presence: true, inclusion: { in: %w[upcoming ongoing completed] }
-  validates :result, inclusion: { in: %w[win lose draw], allow_nil: true }
+    validates :name, presence: true
+    validates :start_time, presence: true
+    validates :odds, presence: true, numericality: { greater_than: 0 }
+    validates :status, presence: true, inclusion: { in: %w[upcoming ongoing completed] }
+    validates :result, inclusion: { in: %w[win lose draw], allow_nil: true }
+
+
 
 
 
@@ -49,10 +51,13 @@ class Event < ApplicationRecord
   end
 
   def update_status_based_on_time
+    return if self.invalid?  # ✅ Prevents changes if the model is invalid
+
     if start_time.past? && status != 'completed'
       self.status = 'completed'
     elsif start_time <= Time.now && status != 'ongoing'
       self.status = 'ongoing'
     end
   end
+
 end

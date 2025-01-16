@@ -2,8 +2,7 @@ class EventsController < ApplicationController
   include AuthenticateRequest
 
   before_action :authenticate_user!, except: %i[index show]
-  before_action :set_event, only: %i[show update destroy]
-
+  before_action :set_event, only: %i[show update destroy update_result]
 
   def index
     @events = Event.left_joins(:bets).select("events.*, COUNT(bets.id) AS bets_count").group("events.id")
@@ -12,7 +11,6 @@ class EventsController < ApplicationController
       methods: [:bets_count]
     )
   end
-
 
   def show
     if @event
@@ -26,16 +24,20 @@ class EventsController < ApplicationController
     end
   end
 
+
   def create
+    Rails.logger.info "🔍 CREATE EVENT - Params received: #{params.inspect}"  # ✅ Log all params received
     @event = Event.new(event_params)
 
-    if @event.valid?  
-      @event.save
+    if @event.save
+      Rails.logger.info "✅ EVENT CREATED SUCCESSFULLY: #{@event.inspect}"
       render json: @event, status: :created
     else
+      Rails.logger.error "🚨 EVENT VALIDATION FAILED: #{@event.errors.full_messages.join(', ')}"
       render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
     end
   end
+
 
 
 
@@ -50,6 +52,16 @@ class EventsController < ApplicationController
     end
   end
 
+  # New action to update only the result field
+  def update_result
+    return render json: { error: 'Event not found' }, status: :not_found if @event.nil?
+
+    if @event.update(result: result_params[:result])
+      render json: @event, status: :ok
+    else
+      render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
 
   def destroy
     if @event
@@ -70,6 +82,11 @@ class EventsController < ApplicationController
     params.require(:event).permit(:name, :start_time, :odds, :status, :result)
   end
 
+  # Only permit the result parameter for update_result
+  def result_params
+    params.permit(:result)
+  end
+
   def process_bet_results(event)
     return unless event.present?
 
@@ -85,5 +102,4 @@ class EventsController < ApplicationController
       end
     end
   end
-
 end

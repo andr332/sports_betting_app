@@ -15,7 +15,9 @@ Rails.application.routes.draw do
   get '/users/:user_id/bets', to: 'bets#user_bets' # Fetch bets for a specific user (admin use)
 
   # Event Routes
-  resources :events, only: [:index, :show, :create, :update, :destroy]
+  resources :events, only: [:index, :show, :create, :update, :destroy] do
+    patch :update_result, on: :member  # New route for updating result only
+  end
 
   # Leaderboard Route
   get 'leaderboard', to: 'leaderboards#index'
