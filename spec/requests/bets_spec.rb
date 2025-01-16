@@ -14,6 +14,34 @@ RSpec.describe "Bets API", type: :request do
   end
 
   path '/bets' do
+    get 'Fetch all bets for the authenticated user' do
+      tags 'Bets'
+      security [{ bearerAuth: [] }]
+      produces 'application/json'
+
+      response '200', 'Bets retrieved successfully' do
+        let(:Authorization) { auth_headers["Authorization"] }
+        before do
+          create(:bet, user: user, event: event, predicted_outcome: "Team A Wins")
+          create(:bet, user: user, event: event, predicted_outcome: "Team B Wins")
+        end
+
+        run_test! do
+          expect(response).to have_http_status(:ok)
+          bets = JSON.parse(response.body)
+          expect(bets.size).to eq(2)
+        end
+      end
+
+      response '401', 'Unauthorized request' do
+        let(:Authorization) { nil } # No token provided
+
+        run_test! do
+          expect(response).to have_http_status(:unauthorized)
+        end
+      end
+    end
+
     post 'Creates a new bet' do
       tags 'Bets'
       consumes 'application/json'
@@ -24,23 +52,23 @@ RSpec.describe "Bets API", type: :request do
           amount: { type: :number },
           odds: { type: :number },
           event_id: { type: :string },
-          predicted_outcome: { type: :string } # ✅ Added predicted_outcome
+          predicted_outcome: { type: :string }
         },
         required: ['amount', 'odds', 'event_id', 'predicted_outcome']
       }
 
-      response '201', 'bet created' do
+      response '201', 'Bet created' do
         let(:bet) { valid_attributes }
         let(:Authorization) { auth_headers["Authorization"] }
 
         run_test! do
           expect(response).to have_http_status(:created)
           expect(JSON.parse(response.body)['amount'].to_f).to eq(100.0)
-          expect(JSON.parse(response.body)['status']).to eq('pending') # Ensure status is 'pending'
+          expect(JSON.parse(response.body)['status']).to eq('pending')
         end
       end
 
-      response '422', 'unprocessable entity' do
+      response '422', 'Unprocessable entity' do
         let(:bet) { invalid_attributes }
         let(:Authorization) { auth_headers["Authorization"] }
 
@@ -68,7 +96,7 @@ RSpec.describe "Bets API", type: :request do
         run_test! do
           expect(response).to have_http_status(:ok)
           expect(JSON.parse(response.body).size).to eq(1)
-          expect(JSON.parse(response.body).first['status']).to eq('pending') # Ensure bet status is 'pending'
+          expect(JSON.parse(response.body).first['status']).to eq('pending')
         end
       end
     end

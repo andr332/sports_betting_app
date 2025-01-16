@@ -4,19 +4,19 @@ Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
 
   # User Routes
-  post 'signup', to: 'users#create'          # User Signup
-  post 'login', to: 'sessions#create'        # User Login
-  get 'profile', to: 'users#profile'         # View Profile
-  put 'profile', to: 'users#update_profile'  # Update Profile
-  delete 'profile', to: 'users#destroy'      # Delete Account
+  post 'signup', to: 'users#create'
+  post 'login', to: 'sessions#create'
+  get 'profile', to: 'users#profile'
+  put 'profile', to: 'users#update_profile'
+  delete 'profile', to: 'users#destroy'
 
   # Bet Routes
-  resources :bets, only: [:create, :index]          # Place a bet and view bet history
-  get '/users/:user_id/bets', to: 'bets#index'      # View bets of a specific user
+  resources :bets, only: [:create, :index, :show]  # Fetch bets for current_user
+  get '/users/:user_id/bets', to: 'bets#user_bets' # Fetch bets for a specific user (admin use)
 
   # Event Routes
-  resources :events, only: [:index, :show, :create, :update, :destroy] # Manage events
+  resources :events, only: [:index, :show, :create, :update, :destroy]
 
   # Leaderboard Route
-  get 'leaderboard', to: 'leaderboards#index'       # View leaderboard
+  get 'leaderboard', to: 'leaderboards#index'
 end

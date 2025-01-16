@@ -15,6 +15,27 @@
   },
   "paths": {
     "/bets": {
+      "get": {
+        "summary": "Fetch all bets for the authenticated user",
+        "tags": [
+          "Bets"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bets retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized request"
+          }
+        }
+      },
       "post": {
         "summary": "Creates a new bet",
         "tags": [
@@ -32,10 +53,10 @@
         ],
         "responses": {
           "201": {
-            "description": "bet created"
+            "description": "Bet created"
           },
           "422": {
-            "description": "unprocessable entity"
+            "description": "Unprocessable entity"
           }
         },
         "requestBody": {
@@ -95,198 +116,6 @@
         "responses": {
           "200": {
             "description": "returns user's bets"
-          }
-        }
-      }
-    },
-    "/events": {
-      "get": {
-        "summary": "List all events",
-        "tags": [
-          "Events"
-        ],
-        "responses": {
-          "200": {
-            "description": "events retrieved"
-          }
-        }
-      },
-      "post": {
-        "summary": "Create a new event",
-        "tags": [
-          "Events"
-        ],
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-
-        ],
-        "responses": {
-          "201": {
-            "description": "event created"
-          },
-          "422": {
-            "description": "unprocessable entity"
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "start_time": {
-                    "type": "string",
-                    "format": "datetime"
-                  },
-                  "odds": {
-                    "type": "number"
-                  },
-                  "status": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "name",
-                  "start_time",
-                  "odds",
-                  "status"
-                ]
-              }
-            }
-          }
-        }
-      }
-    },
-    "/events/{id}": {
-      "get": {
-        "summary": "Show a specific event",
-        "tags": [
-          "Events"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of the event",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "event retrieved"
-          },
-          "404": {
-            "description": "event not found"
-          }
-        }
-      },
-      "put": {
-        "summary": "Update an event",
-        "tags": [
-          "Events"
-        ],
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of the event",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "event updated"
-          },
-          "404": {
-            "description": "event not found"
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string"
-                  },
-                  "start_time": {
-                    "type": "string",
-                    "format": "datetime"
-                  },
-                  "odds": {
-                    "type": "number"
-                  },
-                  "status": {
-                    "type": "string"
-                  },
-                  "result": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "name",
-                  "start_time",
-                  "odds",
-                  "status",
-                  "result"
-                ]
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "summary": "Delete an event",
-        "tags": [
-          "Events"
-        ],
-        "security": [
-          {
-            "bearerAuth": [
-
-            ]
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "ID of the event",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "event deleted"
-          },
-          "404": {
-            "description": "event not found"
           }
         }
       }

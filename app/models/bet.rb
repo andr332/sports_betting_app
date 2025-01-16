@@ -6,7 +6,7 @@ class Bet < ApplicationRecord
 
   validates :amount, presence: true, numericality: { greater_than: 0 }
   validates :odds, presence: true, numericality: { greater_than: 0 }
-  validates :status, presence: true, inclusion: { in: ['pending', 'completed', 'canceled', 'lost'] }
+  validates :status, presence: true, inclusion: { in: ['pending', 'completed', 'canceled', 'lost','won'] }
 
   after_update :update_leaderboard, if: -> { saved_change_to_status? && status == 'completed' }
 
@@ -27,19 +27,21 @@ class Bet < ApplicationRecord
   def update_leaderboard
     if won?
       winnings = amount * odds
-      update!(status: 'completed')
 
       ProcessWinningsJob.perform_async(user_id, winnings)
 
       redis = Redis.new(url: ENV['REDIS_URL'])
       redis.publish('bet_winning_updated', { user_id: user_id, winnings: winnings }.to_json)
+
+      Rails.logger.info("Bet #{id} won. User #{user_id} winnings: #{winnings}")
     else
-      update!(status: 'lost')
       redis = Redis.new(url: ENV['REDIS_URL'])
       redis.publish('bet_lost', { user_id: user_id, bet_id: id }.to_json)
-      Rails.logger.info("Bet #{id} was lost. Status updated.")
+
+      Rails.logger.info("Bet #{id} was lost.")
     end
   end
+
 
   def publish_bet_created
     redis = Redis.new(url: ENV['REDIS_URL'])

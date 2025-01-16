@@ -5,14 +5,20 @@ class Event < ApplicationRecord
   validates :start_time, presence: true
   validates :odds, presence: true, numericality: { greater_than: 0 }
   validates :status, presence: true, inclusion: { in: %w[upcoming ongoing completed] }
-  validates :result, presence: true, on: :update
   validates :result, inclusion: { in: %w[win lose draw], allow_nil: true }
+
+
 
   after_commit :publish_event_created, on: :create
   after_commit :publish_event_updated, on: :update
   after_destroy :publish_event_deleted
   after_update :process_bet_results, if: -> { saved_change_to_result? && status == 'completed' }
   before_save :update_status_based_on_time
+
+
+  def bets_count
+    bets.count
+  end
 
   private
 
