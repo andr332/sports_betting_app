@@ -17,29 +17,28 @@ class Event < ApplicationRecord
   private
 
   def publish_event_created
-    publish_to_redis('event_created', self.to_json)
+    publish_to_redis('event_created', to_json)
   end
 
   def publish_event_updated
-    publish_to_redis('event_updated', self.to_json)
+    publish_to_redis('event_updated', to_json)
   end
 
   def publish_event_deleted
-    publish_to_redis('event_deleted', { id: self.id }.to_json)
+    publish_to_redis('event_deleted', { id: id }.to_json)
   end
 
   def publish_to_redis(channel, message)
-    begin
-      redis = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379'))
-      redis.publish(channel, message)
-    rescue StandardError => e
-      Rails.logger.error("Redis publish error: #{e.message}")
-    end
+    redis = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379'))
+    redis.publish(channel, message)
+  rescue StandardError => e
+    Rails.logger.error("Redis publish error: #{e.message}")
   end
 
   def process_bet_results
     bets.each do |bet|
-      bet.update(status: 'completed')
+      new_status = bet.won? ? 'won' : 'lost'
+      bet.update!(status: new_status)
     end
   end
 
@@ -47,7 +46,7 @@ class Event < ApplicationRecord
     if start_time.past? && status != 'completed'
       self.status = 'completed'
     elsif start_time <= Time.now && status != 'ongoing'
-      self.status = 'ongoing'  
+      self.status = 'ongoing'
     end
   end
 end
