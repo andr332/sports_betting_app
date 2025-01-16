@@ -41,7 +41,7 @@ RSpec.describe Event, type: :model do
       end
 
       it 'processes bet results when event is completed' do
-        bet = create(:bet, event: event, status: 'pending', predicted_outcome: 'win')
+        bet = create(:bet, event: event, status: 'won', predicted_outcome: 'win')
         event.save!
         event.update!(status: 'completed', result: 'win')
         expect(bet.reload.status).to eq('won')

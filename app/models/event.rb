@@ -40,8 +40,11 @@ class Event < ApplicationRecord
 
   def process_bet_results
     bets.each do |bet|
-      new_status = bet.won? ? 'won' : 'lost'
-      bet.update!(status: new_status)
+      if bet.predicted_outcome == result
+        bet.update!(status: 'won')
+      else
+        bet.update!(status: 'lost') 
+      end
     end
   end
 

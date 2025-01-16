@@ -2,9 +2,14 @@ require 'swagger_helper'
 
 RSpec.describe "Bets API", type: :request do
   let(:user) { create(:user) }
-  let(:event) { create(:event) }
 
-  let(:valid_attributes) { { amount: 100, odds: 2.5, event_id: event.id, predicted_outcome: "Team A Wins" } }
+  # ✅ Ensure allowed result types exist before creating an event
+  let!(:result_types) { %w[win lose draw penalty] }
+  before { result_types.each { |name| ResultType.create!(name: name) } }
+
+  let(:event) { create(:event, result: nil) }  # ✅ Allow event creation without failing validation
+
+  let(:valid_attributes) { { amount: 100, odds: 2.5, event_id: event.id, predicted_outcome: "win" } }
   let(:invalid_attributes) { { amount: nil, odds: nil, event_id: nil, predicted_outcome: nil } }
 
   let(:auth_headers) do
@@ -22,8 +27,8 @@ RSpec.describe "Bets API", type: :request do
       response '200', 'Bets retrieved successfully' do
         let(:Authorization) { auth_headers["Authorization"] }
         before do
-          create(:bet, user: user, event: event, predicted_outcome: "Team A Wins")
-          create(:bet, user: user, event: event, predicted_outcome: "Team B Wins")
+          create(:bet, user: user, event: event, predicted_outcome: "win")
+          create(:bet, user: user, event: event, predicted_outcome: "lose")
         end
 
         run_test! do
@@ -34,7 +39,7 @@ RSpec.describe "Bets API", type: :request do
       end
 
       response '401', 'Unauthorized request' do
-        let(:Authorization) { nil } 
+        let(:Authorization) { nil }
 
         run_test! do
           expect(response).to have_http_status(:unauthorized)
@@ -81,16 +86,16 @@ RSpec.describe "Bets API", type: :request do
   end
 
   path '/users/{user_id}/bets' do
-    get 'Returns a user\'s bets' do
+    get "Returns a user's bets" do
       tags 'Bets'
       security [{ bearerAuth: [] }]
       parameter name: :user_id, in: :path, type: :string
 
-      response '200', 'returns user\'s bets' do
+      response '200', "returns user's bets" do
         let(:user_id) { user.id }
         let(:Authorization) { auth_headers["Authorization"] }
         before do
-          create(:bet, user: user, event: event, predicted_outcome: "Team A Wins")
+          create(:bet, user: user, event: event, predicted_outcome: "win")
         end
 
         run_test! do
