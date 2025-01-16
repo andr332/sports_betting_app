@@ -4,6 +4,18 @@ RSpec.describe "Events API", type: :request do
   let(:user) { create(:user) }
   let!(:event) { create(:event, name: 'Basketball Game', start_time: Time.now + 1.day, odds: 2.5, status: 'upcoming', result: nil) }
 
+  before do
+
+    %w[win lose draw penalty].each do |name|
+      ResultType.find_or_create_by!(name: name)
+    end
+
+    puts "Seeded ResultType values: #{ResultType.pluck(:name)}"
+
+
+    allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty])
+  end
+
   let!(:bet1) { create(:bet, user: user, event: event, amount: 100, odds: 2.5, predicted_outcome: "win") }
   let!(:bet2) { create(:bet, user: user, event: event, amount: 50, odds: 2.1, predicted_outcome: "lose") }
 
@@ -30,8 +42,12 @@ RSpec.describe "Events API", type: :request do
   let(:Authorization) { auth_headers["Authorization"] }
 
   before do
-    allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty]) # ✅ Mock ResultType
+    allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty])
   end
+  puts "Allowed predicted_outcome values: #{ResultType.pluck(:name)}"
+
+
+
 
   path '/events' do
     get 'List all events' do
@@ -54,7 +70,6 @@ RSpec.describe "Events API", type: :request do
     end
   end
 
-  # Show Event (Include bets_count)
   path '/events/{id}' do
     get 'Show a specific event' do
       tags 'Events'
@@ -224,4 +239,5 @@ path '/events/{id}/update_result' do
       end
     end
   end
+end
 end

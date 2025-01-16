@@ -8,7 +8,7 @@ RSpec.describe Bet, type: :model do
     allow(Redis).to receive(:new).and_return(redis)
     allow(redis).to receive(:publish)
 
-    # ✅ Seed ResultType before creating an event
+    # Seed ResultType before creating an event
     allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty])
   end
 
@@ -52,16 +52,24 @@ RSpec.describe Bet, type: :model do
       end
 
       it 'triggers leaderboard update when bet is completed' do
+        # Allow ProcessWinningsJob to receive and check calls
         allow(ProcessWinningsJob).to receive(:perform_async)
+
+        # Ensure the bet status is set to completed
         bet.save!
         bet.update!(status: 'completed')
 
+        # Ensure the bet is won (the predicted outcome matches the event result)
+        expect(bet.won?).to be true
+
         if bet.won?
+          # Check that the winnings were published to Redis
           expect(redis).to have_received(:publish).with('bet_winning_updated', {
             user_id: bet.user_id,
             winnings: bet.amount * bet.odds
           }.to_json)
 
+          # Ensure ProcessWinningsJob is called with correct arguments
           expect(ProcessWinningsJob).to have_received(:perform_async).with(bet.user_id, bet.amount * bet.odds)
         end
       end
