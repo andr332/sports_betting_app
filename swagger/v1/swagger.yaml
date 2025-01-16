@@ -1,65 +1,435 @@
----
-openapi: 3.0.1
-info:
-  title: API V1
-  version: v1
-paths:
-  "/signup":
-    post:
-      summary: User Signup
-      tags:
-      - Users
-      parameters: []
-      responses:
-        '201':
-          description: user created
-        '422':
-          description: unprocessable entity
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                email:
-                  type: string
-                password:
-                  type: string
-                password_confirmation:
-                  type: string
-              required:
-              - name
-              - email
-              - password
-              - password_confirmation
-  "/login":
-    post:
-      summary: User Login
-      tags:
-      - Users
-      parameters: []
-      responses:
-        '200':
-          description: login successful
-        '401':
-          description: unauthorized
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                password:
-                  type: string
-              required:
-              - email
-              - password
-servers:
-- url: http://{defaultHost}
-  variables:
-    defaultHost:
-      default: 127.0.0.1:3000
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Users API",
+    "version": "v1"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/bets": {
+      "post": {
+        "summary": "Creates a new bet",
+        "tags": [
+          "Bets"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "201": {
+            "description": "bet created"
+          },
+          "422": {
+            "description": "unprocessable entity"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "number"
+                  },
+                  "odds": {
+                    "type": "number"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "event_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "odds",
+                  "status",
+                  "event_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_id}/bets": {
+      "get": {
+        "summary": "Returns a user's bets",
+        "tags": [
+          "Bets"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "returns user's bets"
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "summary": "List all events",
+        "tags": [
+          "Events"
+        ],
+        "responses": {
+          "200": {
+            "description": "events retrieved"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new event",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "201": {
+            "description": "event created"
+          },
+          "422": {
+            "description": "unprocessable entity"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "start_time": {
+                    "type": "string",
+                    "format": "datetime"
+                  },
+                  "odds": {
+                    "type": "number"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "start_time",
+                  "odds",
+                  "status"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}": {
+      "get": {
+        "summary": "Show a specific event",
+        "tags": [
+          "Events"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of the event",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "event retrieved"
+          },
+          "404": {
+            "description": "event not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an event",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of the event",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "event deleted"
+          },
+          "404": {
+            "description": "event not found"
+          }
+        }
+      }
+    },
+    "/leaderboard": {
+      "get": {
+        "summary": "Retrieve the leaderboard",
+        "tags": [
+          "Leaderboard"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "leaderboard retrieved"
+          },
+          "401": {
+            "description": "unauthorized"
+          }
+        }
+      }
+    },
+    "/signup": {
+      "post": {
+        "summary": "User Signup",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "201": {
+            "description": "user created"
+          },
+          "422": {
+            "description": "unprocessable entity"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "password_confirmation": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "password",
+                  "password_confirmation"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "summary": "User Login",
+        "tags": [
+          "Users"
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "200": {
+            "description": "login successful"
+          },
+          "401": {
+            "description": "unauthorized"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "summary": "Get User Profile",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "profile retrieved"
+          },
+          "401": {
+            "description": "unauthorized"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update User Profile",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "200": {
+            "description": "profile updated"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "password_confirmation": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "email"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete User Account",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "account deleted"
+          },
+          "401": {
+            "description": "unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+
+  ]
+}

@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :bet do
-    user { nil }
-    event { nil }
-    amount { "9.99" }
-    odds { "9.99" }
-    status { "MyString" }
+    amount { 100 }
+    odds { 2.5 }
+    status { "pending" }
+    association :user
+    association :event
   end
 end

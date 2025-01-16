@@ -1,7 +1,8 @@
 FactoryBot.define do
   factory :event do
-    id { "" }
-    name { "MyString" }
-    start_time { "2025-01-16 00:17:55" }
+    name { 'Football Match' }
+    start_time { Time.now + 1.day }
+    odds { 2.5 }
+    status { 'upcoming' }
   end
 end

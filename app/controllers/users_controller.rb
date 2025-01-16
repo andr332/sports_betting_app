@@ -29,9 +29,31 @@ class UsersController < ApplicationController
     }
   end
 
+  # Update Profile
+  def update_profile
+    if @current_user.update(user_params)
+      render json: {
+        id: @current_user.id,
+        name: @current_user.name,
+        email: @current_user.email
+      }, status: :ok
+    else
+      render json: { errors: @current_user.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # Delete Account
+  def destroy
+    if @current_user.destroy
+      render json: { message: 'Account deleted successfully' }, status: :ok
+    else
+      render json: { errors: 'Unable to delete account' }, status: :unprocessable_entity
+    end
+  end
+
   private
 
-  # Strong Parameters for User Creation
+  # Strong Parameters for User Creation and Update
   def user_params
     params.permit(:name, :email, :password, :password_confirmation)
   end

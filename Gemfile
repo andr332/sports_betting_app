@@ -31,6 +31,9 @@ gem 'rswag-ui'
 gem 'rswag-api'
 gem 'rswag-specs'
 
+gem 'database_cleaner-active_record'
+
+
 
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.4', require: false

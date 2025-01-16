@@ -24,6 +24,11 @@ module SportsBettingApp
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 6.1
 
+    # Load environment variables from .env if dotenv is included in the Gemfile
+    if defined?(Dotenv)
+      Dotenv::Railtie.load
+    end
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
@@ -36,5 +41,9 @@ module SportsBettingApp
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # Define the default secret keys
+    config.x.jwt_secret = ENV.fetch("JWT_SECRET", Rails.application.secrets.secret_key_base)
+    config.x.secret_key_base = ENV.fetch("SECRET_KEY_BASE", Rails.application.secrets.secret_key_base)
   end
 end
