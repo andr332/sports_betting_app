@@ -3,14 +3,17 @@ require 'rails_helper'
 RSpec.describe Bet, type: :model do
   let(:redis) { instance_double(Redis) }
   let(:user) { create(:user) }
-  let(:event) { create(:event, result: 'win') }
-  let(:bet) { build(:bet, user: user, event: event, amount: 100, odds: 2.5, predicted_outcome: 'win') }
-
 
   before do
     allow(Redis).to receive(:new).and_return(redis)
     allow(redis).to receive(:publish)
+
+    # ✅ Seed ResultType before creating an event
+    allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty])
   end
+
+  let(:event) { create(:event, result: 'win') }
+  let(:bet) { build(:bet, user: user, event: event, amount: 100, odds: 2.5, predicted_outcome: 'win') }
 
   describe 'associations' do
     it { should belong_to(:user) }
@@ -20,12 +23,10 @@ RSpec.describe Bet, type: :model do
   describe 'validations' do
     it { should validate_presence_of(:amount) }
     it { should validate_numericality_of(:amount).is_greater_than(0) }
-
     it { should validate_presence_of(:odds) }
     it { should validate_numericality_of(:odds).is_greater_than(0) }
-
     it { should validate_presence_of(:status) }
-    it { should validate_inclusion_of(:status).in_array(['pending', 'completed', 'canceled']) }
+    it { should validate_inclusion_of(:status).in_array(['pending', 'completed', 'canceled', 'lost', 'won']) }
   end
 
   describe 'callbacks' do
@@ -55,12 +56,14 @@ RSpec.describe Bet, type: :model do
         bet.save!
         bet.update!(status: 'completed')
 
-        expect(redis).to have_received(:publish).with('bet_winning_updated', {
-          user_id: bet.user_id,
-          winnings: bet.amount * bet.odds
-        }.to_json) if bet.won?
+        if bet.won?
+          expect(redis).to have_received(:publish).with('bet_winning_updated', {
+            user_id: bet.user_id,
+            winnings: bet.amount * bet.odds
+          }.to_json)
 
-        expect(ProcessWinningsJob).to have_received(:perform_async).with(bet.user_id, bet.amount * bet.odds) if bet.won?
+          expect(ProcessWinningsJob).to have_received(:perform_async).with(bet.user_id, bet.amount * bet.odds)
+        end
       end
     end
 
@@ -74,16 +77,15 @@ RSpec.describe Bet, type: :model do
   end
 
   describe '#won?' do
-  it 'returns true if predicted_outcome matches event result' do
-    bet.save!
-    expect(bet.send(:won?)).to be true 
-  end
+    it 'returns true if predicted_outcome matches event result' do
+      bet.save!
+      expect(bet.won?).to be true
+    end
 
-  it 'returns false if predicted_outcome does not match event result' do
-    bet.predicted_outcome = 'lose'
-    bet.save!
-    expect(bet.send(:won?)).to be false
+    it 'returns false if predicted_outcome does not match event result' do
+      bet.predicted_outcome = 'lose'
+      bet.save!
+      expect(bet.won?).to be false
+    end
   end
-end
-
 end

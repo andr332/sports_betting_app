@@ -6,7 +6,10 @@ class Bet < ApplicationRecord
 
   validates :amount, presence: true, numericality: { greater_than: 0 }
   validates :odds, presence: true, numericality: { greater_than: 0 }
-  validates :status, presence: true, inclusion: { in: ['pending', 'completed', 'canceled', 'lost','won'] }
+  validates :status, presence: true, inclusion: { in: %w[pending completed canceled lost won] }
+
+  # ✅ Fix dynamic validation error
+  validates :predicted_outcome, presence: true, inclusion: { in: ->(_bet) { ResultType.pluck(:name) } }
 
   after_update :update_leaderboard, if: -> { saved_change_to_status? && status == 'completed' }
 
@@ -27,7 +30,6 @@ class Bet < ApplicationRecord
   def update_leaderboard
     if won?
       winnings = amount * odds
-
       ProcessWinningsJob.perform_async(user_id, winnings)
 
       redis = Redis.new(url: ENV['REDIS_URL'])
@@ -37,11 +39,9 @@ class Bet < ApplicationRecord
     else
       redis = Redis.new(url: ENV['REDIS_URL'])
       redis.publish('bet_lost', { user_id: user_id, bet_id: id }.to_json)
-
       Rails.logger.info("Bet #{id} was lost.")
     end
   end
-
 
   def publish_bet_created
     redis = Redis.new(url: ENV['REDIS_URL'])

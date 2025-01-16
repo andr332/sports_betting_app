@@ -1,15 +1,11 @@
 class Event < ApplicationRecord
   has_many :bets, dependent: :destroy
 
-    validates :name, presence: true
-    validates :start_time, presence: true
-    validates :odds, presence: true, numericality: { greater_than: 0 }
-    validates :status, presence: true, inclusion: { in: %w[upcoming ongoing completed] }
-    validates :result, inclusion: { in: %w[win lose draw], allow_nil: true }
-
-
-
-
+  validates :name, presence: true
+  validates :start_time, presence: true
+  validates :odds, presence: true, numericality: { greater_than: 0 }
+  validates :status, presence: true, inclusion: { in: %w[upcoming ongoing completed] }
+  validates :result, inclusion: { in: ->(event) { ResultType.pluck(:name) }, allow_nil: true }
 
   after_commit :publish_event_created, on: :create
   after_commit :publish_event_updated, on: :update
@@ -21,7 +17,6 @@ class Event < ApplicationRecord
   def bets_count
     bets.count
   end
-
   private
 
   def publish_event_created
@@ -51,7 +46,7 @@ class Event < ApplicationRecord
   end
 
   def update_status_based_on_time
-    return if self.invalid?  
+    return if invalid?
 
     if start_time.past? && status != 'completed'
       self.status = 'completed'
@@ -59,5 +54,4 @@ class Event < ApplicationRecord
       self.status = 'ongoing'
     end
   end
-
 end

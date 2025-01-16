@@ -21,7 +21,6 @@ RSpec.describe "Events API", type: :request do
     }
   end
 
-
   let(:auth_headers) do
     post '/login', params: { email: user.email, password: user.password }
     json = JSON.parse(response.body)
@@ -29,6 +28,10 @@ RSpec.describe "Events API", type: :request do
   end
 
   let(:Authorization) { auth_headers["Authorization"] }
+
+  before do
+    allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty]) # ✅ Mock ResultType
+  end
 
   path '/events' do
     get 'List all events' do
@@ -45,7 +48,7 @@ RSpec.describe "Events API", type: :request do
 
           first_event = json_response.first
           expect(first_event).to include('bets_count')
-          expect(first_event['bets_count']).to eq(2)  
+          expect(first_event['bets_count']).to eq(2)
         end
       end
     end
@@ -116,115 +119,109 @@ path '/events' do
   end
 end
 
+# Update Event
+path '/events/{id}' do
+  put 'Update an event' do
+    tags 'Events'
+    consumes 'application/json'
+    security [{ bearerAuth: [] }]
+    parameter name: :id, in: :path, type: :string, description: 'ID of the event'
+    parameter name: :event, in: :body, schema: {
+      type: :object,
+      properties: {
+        name: { type: :string },
+        start_time: { type: :string, format: :datetime },
+        odds: { type: :number },
+        status: { type: :string },
+        result: { type: :string }  # result is required during updates
+      },
+      required: ['name', 'start_time', 'odds', 'status', 'result']
+    }
 
+    response '200', 'event updated' do
+      let(:id) { event.id }
+      let(:event_attributes) { { name: 'Updated Event', start_time: Time.now + 3.days, odds: 3.5, status: 'ongoing', result: 'win' } }
 
-
-  # Update Event
-  path '/events/{id}' do
-    put 'Update an event' do
-      tags 'Events'
-      consumes 'application/json'
-      security [{ bearerAuth: [] }]
-      parameter name: :id, in: :path, type: :string, description: 'ID of the event'
-      parameter name: :event, in: :body, schema: {
-        type: :object,
-        properties: {
-          name: { type: :string },
-          start_time: { type: :string, format: :datetime },
-          odds: { type: :number },
-          status: { type: :string },
-          result: { type: :string }  # result is required during updates
-        },
-        required: ['name', 'start_time', 'odds', 'status', 'result']  # result is required during update
-      }
-
-      response '200', 'event updated' do
-        let(:id) { event.id }
-        let(:event_attributes) { { name: 'Updated Event', start_time: Time.now + 3.days, odds: 3.5, status: 'ongoing', result: 'win' } }
-
-        run_test! do
-          put "/events/#{id}", params: { event: event_attributes }, headers: auth_headers
-          expect(response).to have_http_status(:ok)
-          expect(JSON.parse(response.body)['name']).to eq(event_attributes[:name])
-          expect(JSON.parse(response.body)['result']).to eq('win')  # Expecting the result to be updated to 'win'
-        end
+      run_test! do
+        put "/events/#{id}", params: { event: event_attributes }, headers: auth_headers
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['name']).to eq(event_attributes[:name])
+        expect(JSON.parse(response.body)['result']).to eq('win')
       end
+    end
 
-      response '404', 'event not found' do
-        let(:id) { 'invalid-id' }
-        let(:event_attributes) { valid_attributes }
+    response '404', 'event not found' do
+      let(:id) { 'invalid-id' }
+      let(:event_attributes) { valid_attributes }
 
-        run_test! do
-          put "/events/#{id}", params: { event: event_attributes }, headers: auth_headers
-          expect(response).to have_http_status(:not_found)
-        end
+      run_test! do
+        put "/events/#{id}", params: { event: event_attributes }, headers: auth_headers
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
+end
 
-  # Delete Event
-  path '/events/{id}' do
-    delete 'Delete an event' do
-      tags 'Events'
-      security [{ bearerAuth: [] }]
-      parameter name: :id, in: :path, type: :string, description: 'ID of the event'
+# Delete Event
+path '/events/{id}' do
+  delete 'Delete an event' do
+    tags 'Events'
+    security [{ bearerAuth: [] }]
+    parameter name: :id, in: :path, type: :string, description: 'ID of the event'
 
-      response '204', 'event deleted' do
-        let(:id) { event.id }
-        let(:Authorization) { auth_headers['Authorization'] }
+    response '204', 'event deleted' do
+      let(:id) { event.id }
+      let(:Authorization) { auth_headers['Authorization'] }
 
-        run_test! do
-          expect(response).to have_http_status(:no_content)
-        end
+      run_test! do
+        expect(response).to have_http_status(:no_content)
       end
+    end
 
-      response '404', 'event not found' do
-        let(:id) { 'invalid-id' }
-        let(:Authorization) { auth_headers['Authorization'] }
+    response '404', 'event not found' do
+      let(:id) { 'invalid-id' }
+      let(:Authorization) { auth_headers['Authorization'] }
 
-        run_test!
+      run_test!
+    end
+  end
+end
+
+# Update Event Result
+path '/events/{id}/update_result' do
+  patch 'Update result of an event' do
+    tags 'Events'
+    consumes 'application/json'
+    security [{ bearerAuth: [] }]
+    parameter name: :id, in: :path, type: :string, description: 'ID of the event'
+    parameter name: :result, in: :body, schema: {
+      type: :object,
+      properties: {
+        result: { type: :string, enum: ['win', 'lose', 'draw', 'penalty'] }
+      },
+      required: ['result']
+    }
+
+    let(:result) { { result: 'lose' } }
+
+    response '200', 'result updated successfully' do
+      let(:id) { event.id }
+
+      run_test! do
+        patch "/events/#{id}/update_result", params: result, headers: auth_headers
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['result']).to eq('lose')
+      end
+    end
+
+    response '404', 'event not found' do
+      let(:id) { 'invalid-id' }
+      let(:result_update) { { result: 'win' } }
+
+      run_test! do
+        patch "/events/#{id}/update_result", params: result_update, headers: auth_headers
+        expect(response).to have_http_status(:not_found)
       end
     end
   end
-
-  # Update Event Result
-  path '/events/{id}/update_result' do
-    patch 'Update result of an event' do
-      tags 'Events'
-      consumes 'application/json'
-      security [{ bearerAuth: [] }]
-      parameter name: :id, in: :path, type: :string, description: 'ID of the event'
-      parameter name: :result, in: :body, schema: {
-        type: :object,
-        properties: {
-          result: { type: :string, enum: ['win', 'lose', 'draw'] }
-        },
-        required: ['result']
-      }
-
-      let(:result) { { result: 'lose' } }
-
-      response '200', 'result updated successfully' do
-        let(:id) { event.id }
-
-        run_test! do
-          patch "/events/#{id}/update_result", params: result, headers: auth_headers
-          expect(response).to have_http_status(:ok)
-          expect(JSON.parse(response.body)['result']).to eq('lose')
-        end
-      end
-
-      response '404', 'event not found' do
-        let(:id) { 'invalid-id' }
-        let(:result_update) { { result: 'win' } }
-
-        run_test! do
-          patch "/events/#{id}/update_result", params: result_update, headers: auth_headers
-          expect(response).to have_http_status(:not_found)
-        end
-      end
-    end
-  end
-
-
 end

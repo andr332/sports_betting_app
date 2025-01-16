@@ -26,7 +26,7 @@ RSpec.describe "Leaderboards API", type: :request do
           expect(response).to have_http_status(:ok)
           parsed_body = JSON.parse(response.body)
           expect(parsed_body).to be_an(Array)
-          expect(parsed_body.size).to eq(10) 
+          expect(parsed_body.size).to eq(10)
           expect(parsed_body.first).to include('id', 'name', 'total_winnings')
         end
       end

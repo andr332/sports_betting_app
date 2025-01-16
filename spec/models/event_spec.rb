@@ -6,6 +6,7 @@ RSpec.describe Event, type: :model do
   before do
     allow(Redis).to receive(:new).and_return(redis)
     allow(redis).to receive(:publish)
+    allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty])
   end
 
   describe 'associations' do
@@ -19,7 +20,7 @@ RSpec.describe Event, type: :model do
     it { should validate_numericality_of(:odds).is_greater_than(0) }
     it { should validate_presence_of(:status) }
     it { should validate_inclusion_of(:status).in_array(%w[upcoming ongoing completed]) }
-    it { should validate_inclusion_of(:result).in_array(%w[win lose draw]).allow_nil }
+    it { should validate_inclusion_of(:result).in_array(%w[win lose draw penalty]).allow_nil }
   end
 
   describe 'callbacks' do
@@ -39,14 +40,12 @@ RSpec.describe Event, type: :model do
         expect(redis).to have_received(:publish).with('event_updated', event.to_json)
       end
 
-
       it 'processes bet results when event is completed' do
-        bet = create(:bet, event: event, status: 'completed')
+        bet = create(:bet, event: event, status: 'pending', predicted_outcome: 'win')
         event.save!
         event.update!(status: 'completed', result: 'win')
-        expect(bet.reload.status).to eq('completed')
+        expect(bet.reload.status).to eq('won')
       end
-
     end
 
     context 'after destroy' do
