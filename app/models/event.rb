@@ -39,29 +39,47 @@ class Event < ApplicationRecord
   end
 
   def process_bet_results
+    if result.present?
+      Rails.logger.info("Updating event #{id} status to 'completed' as result is set.")
+      update!(status: 'completed') # Ensure event is marked as completed when the result is updated
+    end
+
     bets.each do |bet|
+      Rails.logger.info("Processing bet #{bet.id} for event #{id}. Predicted outcome: #{bet.predicted_outcome}, Actual result: #{result}")
+
       new_status = bet.predicted_outcome == result ? 'won' : 'lost'
       winnings = new_status == 'won' ? bet.amount * bet.odds : 0
+
+      Rails.logger.info("Bet #{bet.id} new status: #{new_status}, Calculated winnings: #{winnings}")
 
       bet.update!(status: new_status, winnings: winnings)
 
       if new_status == 'won'
+        Rails.logger.info("Updating leaderboard for user #{bet.user_id}. Adding winnings: #{winnings}")
+
         leaderboard = Leaderboard.find_or_initialize_by(user_id: bet.user_id)
         leaderboard.total_winnings ||= 0
         leaderboard.total_winnings += winnings
         leaderboard.save!
 
-        bet.update!(winnings: winnings) # Ensure winnings are saved in the Bet model
+        Rails.logger.info("User #{bet.user_id} total winnings updated to #{leaderboard.total_winnings}")
 
         ProcessWinningsJob.perform_async(bet.user_id, winnings)
-        publish_to_redis('bet_winning_updated', { user_id: bet.user_id, winnings: winnings }.to_json)
+        redis_payload = { user_id: bet.user_id, winnings: winnings, bet_id: bet.id }.to_json
+        publish_to_redis('bet_winning_updated', redis_payload)
+
+        Rails.logger.info("Redis event 'bet_winning_updated' published: #{redis_payload}")
       else
-        publish_to_redis('bet_lost', { user_id: bet.user_id, bet_id: bet.id }.to_json)
+        redis_payload = { user_id: bet.user_id, bet_id: bet.id, status: 'lost' }.to_json
+        publish_to_redis('bet_lost', redis_payload)
+
+        Rails.logger.info("Redis event 'bet_lost' published: #{redis_payload}")
       end
 
-      Rails.logger.info("Bet #{bet.id} marked as #{new_status} with winnings: #{bet.winnings}.")
+      Rails.logger.info("Finalized processing for bet #{bet.id}. Status: #{new_status}, Winnings: #{bet.winnings}")
     end
   end
+
 
   def update_status_based_on_time
     return if invalid?
