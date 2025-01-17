@@ -30,18 +30,27 @@ class Bet < ApplicationRecord
   def update_leaderboard
     if won?
       winnings = amount * odds
+      update(winnings: winnings)
+
+      leaderboard = Leaderboard.find_or_initialize_by(user_id: user_id)
+      leaderboard.total_winnings ||= 0
+      leaderboard.total_winnings += winnings
+      leaderboard.save!
+
       ProcessWinningsJob.perform_async(user_id, winnings)
 
       redis = Redis.new(url: ENV['REDIS_URL'])
       redis.publish('bet_winning_updated', { user_id: user_id, winnings: winnings }.to_json)
 
-      Rails.logger.info("Bet #{id} won. User #{user_id} winnings: #{winnings}")
+      Rails.logger.info("Bet #{id} won. User #{user_id} winnings: #{winnings}. Total Winnings: #{leaderboard.total_winnings}")
     else
       redis = Redis.new(url: ENV['REDIS_URL'])
       redis.publish('bet_lost', { user_id: user_id, bet_id: id }.to_json)
       Rails.logger.info("Bet #{id} was lost.")
     end
   end
+
+
 
   def publish_bet_created
     redis = Redis.new(url: ENV['REDIS_URL'])
