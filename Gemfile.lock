@@ -89,6 +89,7 @@ GEM
       railties (>= 5.0.0)
     faker (3.4.2)
       i18n (>= 1.8.11, < 2)
+    ffi (1.17.1)
     ffi (1.17.1-x86_64-darwin)
     foreman (0.88.1)
     globalid (1.2.1)
@@ -127,6 +128,8 @@ GEM
       net-protocol
     nio4r (2.7.4)
     nokogiri (1.15.7-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.15.7-x86_64-linux)
       racc (~> 1.4)
     pg (1.5.9)
     public_suffix (5.0.1)
@@ -227,6 +230,7 @@ GEM
 
 PLATFORMS
   x86_64-darwin-22
+  x86_64-linux
 
 DEPENDENCIES
   bcrypt (~> 3.1.7)
