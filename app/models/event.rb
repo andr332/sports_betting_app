@@ -39,46 +39,38 @@ class Event < ApplicationRecord
   end
 
   def process_bet_results
-    if result.present?
-      Rails.logger.info("Updating event #{id} status to 'completed' as result is set.")
-      update!(status: 'completed') # Ensure event is marked as completed when the result is updated
-    end
+    return unless result.present?
+
+    Rails.logger.info("Processing bets for event #{id}. Result: #{result}")
 
     bets.each do |bet|
-      Rails.logger.info("Processing bet #{bet.id} for event #{id}. Predicted outcome: #{bet.predicted_outcome}, Actual result: #{result}")
-
       new_status = bet.predicted_outcome == result ? 'won' : 'lost'
       winnings = new_status == 'won' ? bet.amount * bet.odds : 0
 
-      Rails.logger.info("Bet #{bet.id} new status: #{new_status}, Calculated winnings: #{winnings}")
+      if bet.update(status: new_status, winnings: winnings)
+        Rails.logger.info("Bet #{bet.id} updated to #{new_status} with winnings: #{winnings}")
 
-      bet.update!(status: new_status, winnings: winnings)
+        redis = Redis.new(url: ENV['REDIS_URL'])
+        redis.publish('bet_status_updated', { bet_id: bet.id, status: new_status }.to_json)
 
-      if new_status == 'won'
-        Rails.logger.info("Updating leaderboard for user #{bet.user_id}. Adding winnings: #{winnings}")
+        if new_status == 'won'
+          leaderboard = Leaderboard.find_or_initialize_by(user_id: bet.user_id)
+          leaderboard.total_winnings ||= 0
+          leaderboard.total_winnings += winnings
+          leaderboard.save!
 
-        leaderboard = Leaderboard.find_or_initialize_by(user_id: bet.user_id)
-        leaderboard.total_winnings ||= 0
-        leaderboard.total_winnings += winnings
-        leaderboard.save!
+          Rails.logger.info("Leaderboard for user #{bet.user_id} updated. Total winnings: #{leaderboard.total_winnings}")
 
-        Rails.logger.info("User #{bet.user_id} total winnings updated to #{leaderboard.total_winnings}")
-
-        ProcessWinningsJob.perform_async(bet.user_id, winnings)
-        redis_payload = { user_id: bet.user_id, winnings: winnings, bet_id: bet.id }.to_json
-        publish_to_redis('bet_winning_updated', redis_payload)
-
-        Rails.logger.info("Redis event 'bet_winning_updated' published: #{redis_payload}")
+          # ✅ Convert winnings to `Float` before passing to Sidekiq
+          ProcessWinningsJob.perform_async(bet.user_id, winnings.to_f)
+          redis.publish('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
+        end
       else
-        redis_payload = { user_id: bet.user_id, bet_id: bet.id, status: 'lost' }.to_json
-        publish_to_redis('bet_lost', redis_payload)
-
-        Rails.logger.info("Redis event 'bet_lost' published: #{redis_payload}")
+        Rails.logger.error("Failed to update bet #{bet.id}: #{bet.errors.full_messages.join(', ')}")
       end
-
-      Rails.logger.info("Finalized processing for bet #{bet.id}. Status: #{new_status}, Winnings: #{bet.winnings}")
     end
   end
+
 
 
   def update_status_based_on_time

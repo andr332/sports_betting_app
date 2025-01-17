@@ -53,13 +53,17 @@ class EventsController < ApplicationController
 
     if @event.update(result: result_params[:result], status: 'completed')
       Rails.logger.info("Event #{@event.id} result updated to #{result_params[:result]} and status set to 'completed'.")
+
       process_bet_results(@event)
-      render json: @event, status: :ok
+
+      # Ensure the response includes the result field
+      render json: @event.as_json(only: [:id, :name, :start_time, :status, :result]), status: :ok
     else
       Rails.logger.error("Failed to update event #{@event.id}: #{@event.errors.full_messages.join(', ')}")
       render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
     end
   end
+
 
   def destroy
     if @event

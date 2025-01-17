@@ -212,6 +212,7 @@ path '/events/{id}/update_result' do
     parameter name: :result, in: :body, schema: {
       type: :object,
       properties: {
+        
         result: { type: :string, enum: ['win', 'lose', 'draw', 'penalty'] }
       },
       required: ['result']
