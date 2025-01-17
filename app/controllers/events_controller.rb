@@ -39,7 +39,6 @@ class EventsController < ApplicationController
     return render json: { error: 'Event not found' }, status: :not_found if @event.nil?
 
     if @event.update(event_params)
-      # Process bet results if the result changes
       process_bet_results(@event) if @event.saved_change_to_attribute?(:result)
       render json: @event
     else
@@ -56,14 +55,12 @@ class EventsController < ApplicationController
 
       process_bet_results(@event)
 
-      # Ensure the response includes the result field
       render json: @event.as_json(only: [:id, :name, :start_time, :status, :result]), status: :ok
     else
       Rails.logger.error("Failed to update event #{@event.id}: #{@event.errors.full_messages.join(', ')}")
       render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
     end
   end
-
 
   def destroy
     if @event
@@ -93,21 +90,22 @@ class EventsController < ApplicationController
 
     Rails.logger.info("Processing bets for event #{event.id}. Result: #{event.result}")
 
+    redis = Redis.new(url: ENV['REDIS_URL'])
+
     event.bets.each do |bet|
       new_status = bet.predicted_outcome == event.result ? 'won' : 'lost'
-      winnings = new_status == 'won' ? bet.amount * bet.odds : 0
+      winnings = new_status == 'won' ? bet.amount.to_f * bet.odds.to_f : 0.0  # Convert winnings to float
 
       if bet.update(status: new_status, winnings: winnings)
         Rails.logger.info("Bet #{bet.id} updated to #{new_status} with winnings: #{winnings}")
 
-        redis = Redis.new(url: ENV['REDIS_URL'])
         redis.publish('bet_status_updated', { bet_id: bet.id, status: new_status }.to_json)
 
         if new_status == 'won'
           Rails.logger.info("Checking leaderboard for user #{bet.user_id} before update...")
 
           leaderboard = Leaderboard.find_or_initialize_by(user_id: bet.user_id)
-          old_winnings = leaderboard.total_winnings || 0
+          old_winnings = leaderboard.total_winnings.to_f
 
           leaderboard.total_winnings ||= 0
           leaderboard.total_winnings += winnings
@@ -115,8 +113,9 @@ class EventsController < ApplicationController
 
           Rails.logger.info("Leaderboard for user #{bet.user_id} updated. Old winnings: #{old_winnings}, New winnings: #{leaderboard.total_winnings}")
 
-          # Ensure winnings are passed as a float to Sidekiq
           ProcessWinningsJob.perform_async(bet.user_id, winnings.to_f)
+
+          redis.publish('leaderboard_updated', { user_id: bet.user_id, total_winnings: leaderboard.total_winnings.to_f }.to_json)
           redis.publish('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
         end
       else
@@ -124,6 +123,4 @@ class EventsController < ApplicationController
       end
     end
   end
-
-
 end
