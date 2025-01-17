@@ -11,8 +11,6 @@ class Bet < ApplicationRecord
   # ✅ Fix dynamic validation error
   validates :predicted_outcome, presence: true, inclusion: { in: ->(_bet) { ResultType.pluck(:name) } }
 
-  after_update :update_leaderboard, if: -> { saved_change_to_status? && status == 'completed' }
-
   after_commit :publish_bet_created, on: :create
   after_commit :publish_bet_updated, on: :update
   after_destroy :publish_bet_deleted
@@ -26,31 +24,6 @@ class Bet < ApplicationRecord
   def set_default_status
     self.status ||= 'pending'
   end
-
-  def update_leaderboard
-    if won?
-      winnings = amount * odds
-      update(winnings: winnings)
-
-      leaderboard = Leaderboard.find_or_initialize_by(user_id: user_id)
-      leaderboard.total_winnings ||= 0
-      leaderboard.total_winnings += winnings
-      leaderboard.save!
-
-      ProcessWinningsJob.perform_async(user_id, winnings)
-
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      redis.publish('bet_winning_updated', { user_id: user_id, winnings: winnings }.to_json)
-
-      Rails.logger.info("Bet #{id} won. User #{user_id} winnings: #{winnings}. Total Winnings: #{leaderboard.total_winnings}")
-    else
-      redis = Redis.new(url: ENV['REDIS_URL'])
-      redis.publish('bet_lost', { user_id: user_id, bet_id: id }.to_json)
-      Rails.logger.info("Bet #{id} was lost.")
-    end
-  end
-
-
 
   def publish_bet_created
     redis = Redis.new(url: ENV['REDIS_URL'])

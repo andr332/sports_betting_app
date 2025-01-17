@@ -13,10 +13,10 @@ class Event < ApplicationRecord
   after_update :process_bet_results, if: -> { saved_change_to_result? && status == 'completed' }
   before_save :update_status_based_on_time
 
-
   def bets_count
     bets.count
   end
+
   private
 
   def publish_event_created
@@ -40,11 +40,26 @@ class Event < ApplicationRecord
 
   def process_bet_results
     bets.each do |bet|
-      if bet.predicted_outcome == result
-        bet.update!(status: 'won')
+      new_status = bet.predicted_outcome == result ? 'won' : 'lost'
+      winnings = new_status == 'won' ? bet.amount * bet.odds : 0
+
+      bet.update!(status: new_status, winnings: winnings)
+
+      if new_status == 'won'
+        leaderboard = Leaderboard.find_or_initialize_by(user_id: bet.user_id)
+        leaderboard.total_winnings ||= 0
+        leaderboard.total_winnings += winnings
+        leaderboard.save!
+
+        bet.update!(winnings: winnings) # Ensure winnings are saved in the Bet model
+
+        ProcessWinningsJob.perform_async(bet.user_id, winnings)
+        publish_to_redis('bet_winning_updated', { user_id: bet.user_id, winnings: winnings }.to_json)
       else
-        bet.update!(status: 'lost') 
+        publish_to_redis('bet_lost', { user_id: bet.user_id, bet_id: bet.id }.to_json)
       end
+
+      Rails.logger.info("Bet #{bet.id} marked as #{new_status} with winnings: #{bet.winnings}.")
     end
   end
 
