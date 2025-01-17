@@ -8,7 +8,7 @@ class Bet < ApplicationRecord
   validates :odds, presence: true, numericality: { greater_than: 0 }
   validates :status, presence: true, inclusion: { in: %w[pending completed canceled lost won] }
 
-  # ✅ Fix dynamic validation error
+
   validates :predicted_outcome, presence: true, inclusion: { in: ->(_bet) { ResultType.pluck(:name) } }
 
   after_commit :publish_bet_created, on: :create

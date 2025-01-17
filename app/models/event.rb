@@ -61,7 +61,6 @@ class Event < ApplicationRecord
 
           Rails.logger.info("Leaderboard for user #{bet.user_id} updated. Total winnings: #{leaderboard.total_winnings}")
 
-          # ✅ Convert winnings to `Float` before passing to Sidekiq
           ProcessWinningsJob.perform_async(bet.user_id, winnings.to_f)
           redis.publish('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
         end

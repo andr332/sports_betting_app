@@ -148,7 +148,7 @@ path '/events/{id}' do
         start_time: { type: :string, format: :datetime },
         odds: { type: :number },
         status: { type: :string },
-        result: { type: :string }  # result is required during updates
+        result: { type: :string } 
       },
       required: ['name', 'start_time', 'odds', 'status', 'result']
     }
@@ -212,7 +212,7 @@ path '/events/{id}/update_result' do
     parameter name: :result, in: :body, schema: {
       type: :object,
       properties: {
-        
+
         result: { type: :string, enum: ['win', 'lose', 'draw', 'penalty'] }
       },
       required: ['result']

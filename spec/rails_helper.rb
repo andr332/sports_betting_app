@@ -27,7 +27,7 @@ RSpec.configure do |config|
   # Infer test types (e.g., `:controller`, `:model`) from file location
   config.infer_spec_type_from_file_location!
 
-  # Filter Rails-specific backtrace
+
   config.filter_rails_from_backtrace!
 
 
@@ -45,7 +45,7 @@ RSpec.configure do |config|
     end
   end
 
-  # Configure Shoulda Matchers
+
 Shoulda::Matchers.configure do |config|
   config.integrate do |with|
     with.test_framework :rspec

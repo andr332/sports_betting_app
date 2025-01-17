@@ -3,11 +3,10 @@ require 'swagger_helper'
 RSpec.describe "Bets API", type: :request do
   let(:user) { create(:user) }
 
-  # ✅ Ensure allowed result types exist before creating an event
   let!(:result_types) { %w[win lose draw penalty] }
   before { result_types.each { |name| ResultType.create!(name: name) } }
 
-  let(:event) { create(:event, result: nil) }  # ✅ Allow event creation without failing validation
+  let(:event) { create(:event, result: nil) } 
 
   let(:valid_attributes) { { amount: 100, odds: 2.5, event_id: event.id, predicted_outcome: "win" } }
   let(:invalid_attributes) { { amount: nil, odds: nil, event_id: nil, predicted_outcome: nil } }
