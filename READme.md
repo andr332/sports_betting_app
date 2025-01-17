@@ -45,6 +45,8 @@ This repository contains the **Rails** backend service for the sports betting an
    bundle exec foreman start
    ```
 
+- `http://localhost:3000/api/docs` – Connect to swagga docs
+
 ---
 
 ## Contributing
