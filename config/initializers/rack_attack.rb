@@ -1,5 +1,4 @@
 class Rack::Attack
-  # Store throttle counts in Redis
   Rack::Attack.cache.store = ActiveSupport::Cache::RedisCacheStore.new(
     url: ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" },
     namespace: "rack_attack"
@@ -50,14 +49,12 @@ class Rack::Attack
     user_id_from_request(req)
   end
 
-  ### LOGGING RATE LIMIT VIOLATIONS ###
   ActiveSupport::Notifications.subscribe('rack.attack') do |name, start, finish, request_id, payload|
     if payload[:request].env['rack.attack.match_type'] == :throttle
       Rails.logger.warn "[Rack::Attack] Throttled: #{payload[:request].env['rack.attack.match_data']}"
     end
   end
 
-  ### RESPONSE WHEN RATE LIMITED ###
   self.throttled_response = lambda do |env|
     retry_after = (env['rack.attack.match_data'] || {})[:period]
     [
