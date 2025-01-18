@@ -38,6 +38,11 @@ This repository contains the **Rails** backend service for the sports betting an
 4. **Run tests:**
    ```sh
    bundle exec rspec
+
+
+    (rate limiting test run on terminal)
+    for i in {1..15}; do curl -X POST -d "email=test@example.com&password=wrongpassword" http://localhost:7000/login; done 
+
    ```
 
 5. **Start the server:**

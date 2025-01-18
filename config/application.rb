@@ -29,21 +29,20 @@ module SportsBettingApp
       Dotenv::Railtie.load
     end
 
-    # Configuration for the application, engines, and railties goes here.
-    #
-    # These settings can be overridden in specific environments using the files
-    # in config/environments, which are processed later.
-    #
-    # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("extras")
-
-    # Only loads a smaller set of middleware suitable for API only apps.
-    # Middleware like session, flash, cookies can be added back manually.
-    # Skip views, helpers and assets when generating a new resource.
+    # Only loads a smaller set of middleware suitable for API-only apps.
     config.api_only = true
 
     # Define the default secret keys
     config.x.jwt_secret = ENV.fetch("JWT_SECRET", Rails.application.secrets.secret_key_base)
     config.x.secret_key_base = ENV.fetch("SECRET_KEY_BASE", Rails.application.secrets.secret_key_base)
+
+    # ✅ Use Redis as the cache store for Rack::Attack
+    config.cache_store = :redis_cache_store, {
+      url: ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" },
+      namespace: "sports_betting_cache"
+    }
+
+
+    config.middleware.use Rack::Attack
   end
 end

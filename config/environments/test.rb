@@ -57,4 +57,10 @@ Rails.application.configure do
 
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true
+
+
+  # Disable Rack::Attack in test environment
+  #comment out when running test for rate limitting in test environment
+  config.middleware.delete Rack::Attack
+
 end
