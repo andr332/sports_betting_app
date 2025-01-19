@@ -34,6 +34,16 @@ This repository contains the **Rails** backend service for the sports betting an
    rails db:migrate
    rails db:seed
    ```
+  **If you've previously worked with the repo before the addition of the balance layer for users, please clear out your database first:
+   ```sh
+  drop database sport_betting_app_development
+  drop database sport_betting_test
+  rails db:create
+  rails db:migrate
+  rails db:seed
+   ```
+
+   
 
 4. **Run tests:**
    ```sh
