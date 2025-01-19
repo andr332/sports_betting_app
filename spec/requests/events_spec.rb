@@ -148,14 +148,14 @@ path '/events/{id}' do
         start_time: { type: :string, format: :datetime },
         odds: { type: :number },
         status: { type: :string },
-        result: { type: :string } 
+        result: { type: :string }
       },
       required: ['name', 'start_time', 'odds', 'status', 'result']
     }
 
     response '200', 'event updated' do
       let(:id) { event.id }
-      let(:event_attributes) { { name: 'Updated Event', start_time: Time.now + 3.days, odds: 3.5, status: 'ongoing', result: 'win' } }
+      let(:event_attributes) { { name: 'Updated Event', start_time: Time.now, odds: 3.5, status: 'completed', result: 'win' } }
 
       run_test! do
         put "/events/#{id}", params: { event: event_attributes }, headers: auth_headers
@@ -212,7 +212,6 @@ path '/events/{id}/update_result' do
     parameter name: :result, in: :body, schema: {
       type: :object,
       properties: {
-
         result: { type: :string, enum: ['win', 'lose', 'draw', 'penalty'] }
       },
       required: ['result']
@@ -220,13 +219,42 @@ path '/events/{id}/update_result' do
 
     let(:result) { { result: 'lose' } }
 
-    response '200', 'result updated successfully' do
-      let(:id) { event.id }
+    context 'when event is completed' do
+      before do
+        event.update!(status: 'completed')
+        event.reload  # Ensure database commits status update before sending request
+      end
 
-      run_test! do
-        patch "/events/#{id}/update_result", params: result, headers: auth_headers
-        expect(response).to have_http_status(:ok)
-        expect(JSON.parse(response.body)['result']).to eq('lose')
+      response '200', 'result updated successfully' do
+        let(:id) { event.id }
+
+        run_test! do
+          patch "/events/#{id}/update_result",
+                params: result.to_json,
+                headers: auth_headers.merge({ "CONTENT_TYPE" => "application/json" })
+
+          expect(response).to have_http_status(:ok)
+
+          json_response = JSON.parse(response.body)
+          expect(json_response['result']).to eq('lose') 
+        end
+      end
+    end
+
+    context 'when event is NOT completed' do
+      response '422', 'cannot update result if event is not completed' do
+        let(:id) { event.id }
+
+        run_test! do
+          patch "/events/#{id}/update_result",
+                params: result.to_json,
+                headers: auth_headers.merge({ "CONTENT_TYPE" => "application/json" })
+
+          expect(response).to have_http_status(:unprocessable_entity)
+
+          json_response = JSON.parse(response.body)
+          expect(json_response['error']).to eq("Result can only be updated when the event is completed")
+        end
       end
     end
 
@@ -235,10 +263,15 @@ path '/events/{id}/update_result' do
       let(:result_update) { { result: 'win' } }
 
       run_test! do
-        patch "/events/#{id}/update_result", params: result_update, headers: auth_headers
+        patch "/events/#{id}/update_result",
+              params: result_update.to_json,
+              headers: auth_headers.merge({ "CONTENT_TYPE" => "application/json" })
+
         expect(response).to have_http_status(:not_found)
       end
     end
   end
 end
+
+
 end

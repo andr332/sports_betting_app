@@ -20,7 +20,15 @@ RSpec.describe Event, type: :model do
     it { should validate_numericality_of(:odds).is_greater_than(0) }
     it { should validate_presence_of(:status) }
     it { should validate_inclusion_of(:status).in_array(%w[upcoming ongoing completed]) }
-    it { should validate_inclusion_of(:result).in_array(%w[win lose draw penalty]).allow_nil }
+
+    it 'does not allow result unless event is completed' do
+      event = build(:event, status: 'ongoing', result: 'win')
+      expect(event).not_to be_valid
+      expect(event.errors[:result]).to include('can only be set when the event is completed')
+
+      event.status = 'completed'
+      expect(event).to be_valid
+    end
   end
 
   describe 'callbacks' do
@@ -36,8 +44,19 @@ RSpec.describe Event, type: :model do
     context 'after update' do
       it 'publishes event_updated event' do
         event.save!
-        event.update!(name: 'Updated Event', result: 'win')
+        event.update!(name: 'Updated Event')
         expect(redis).to have_received(:publish).with('event_updated', event.to_json)
+      end
+    end
+
+    context 'when event is completed' do
+      let(:event) { create(:event, status: 'ongoing', result: nil) }
+      let!(:bet) { create(:bet, event: event, status: 'pending', predicted_outcome: 'win') }  # ✅ Fixed status
+
+      it 'does not allow updating result unless completed' do
+        expect {
+          event.update!(result: 'win')
+        }.to raise_error(ActiveRecord::RecordInvalid)
       end
 
       it 'processes bet results when event is completed' do

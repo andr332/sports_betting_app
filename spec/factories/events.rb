@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :event do
     name { "Championship Final" }
-    start_time { Time.now + 1.hour }
+    start_time { Time.now }
     odds { 4 }
-    status { "upcoming" }
+    status { "completed" }
     result { 'win' }
   end
 end

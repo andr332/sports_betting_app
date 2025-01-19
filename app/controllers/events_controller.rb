@@ -48,19 +48,35 @@ class EventsController < ApplicationController
   end
 
   def update_result
+    Rails.logger.info("Received request to update result for event ID: #{params[:id]} with params: #{params}")
+
     return render json: { error: 'Event not found' }, status: :not_found if @event.nil?
 
-    if @event.update(result: result_params[:result], status: 'completed')
-      Rails.logger.info("Event #{@event.id} result updated to #{result_params[:result]} and status set to 'completed'.")
+    Rails.logger.info("Event found: #{@event.as_json(only: [:id, :name, :status, :result])}")
 
-      process_bet_results(@event)
+    unless @event.status == 'completed'
+      Rails.logger.warn("Attempt to update result for an event that is not completed. Event ID: #{@event.id}, Status: #{@event.status}")
+      return render json: { error: 'Result can only be updated when the event is completed' }, status: :unprocessable_entity
+    end
 
+    previous_result = @event.result
+    if @event.update(result: result_params[:result])
+      Rails.logger.info("Successfully updated event #{@event.id}. Previous result: #{previous_result}, New result: #{result_params[:result]}")
+
+      if @event.saved_change_to_result?
+        Rails.logger.info("Processing bets for event #{@event.id} after result change.")
+        process_bet_results(@event)
+      end
+
+      Rails.logger.info("Returning updated event response: #{@event.as_json(only: [:id, :name, :start_time, :status, :result])}")
       render json: @event.as_json(only: [:id, :name, :start_time, :status, :result]), status: :ok
     else
-      Rails.logger.error("Failed to update event #{@event.id}: #{@event.errors.full_messages.join(', ')}")
+      Rails.logger.error("Failed to update event #{@event.id}. Errors: #{@event.errors.full_messages.join(', ')}")
       render json: { errors: @event.errors.full_messages }, status: :unprocessable_entity
     end
   end
+
+
 
   def destroy
     if @event
