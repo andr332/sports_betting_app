@@ -12,7 +12,7 @@ RSpec.describe Bet, type: :model do
     allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty])
   end
 
-  let(:event) { create(:event, result: 'win') }
+  let(:event) { create(:event, odds: 3.0, result: 'win') }
   let(:bet) { build(:bet, user: user, event: event, amount: 100, odds: 2.5, predicted_outcome: 'win') }
 
   describe 'associations' do
@@ -26,7 +26,20 @@ RSpec.describe Bet, type: :model do
     it { should validate_presence_of(:odds) }
     it { should validate_numericality_of(:odds).is_greater_than(0) }
     it { should validate_presence_of(:status) }
-    it { should validate_inclusion_of(:status).in_array(['pending', 'completed', 'canceled', 'lost', 'won']) }
+    it { should validate_inclusion_of(:status).in_array(%w[pending completed canceled lost won]) }
+
+    context 'custom validation - odds cannot exceed event odds' do
+      it 'is valid when odds are less than or equal to event odds' do
+        bet.odds = 3.0  # Setting odds equal to event odds
+        expect(bet).to be_valid
+      end
+
+      it 'is invalid when odds exceed event odds' do
+        bet.odds = 3.5  # Setting odds higher than event odds
+        expect(bet).not_to be_valid
+        expect(bet.errors[:odds]).to include("cannot be higher than the event's odds (3.0)")
+      end
+    end
   end
 
   describe 'callbacks' do
@@ -50,8 +63,6 @@ RSpec.describe Bet, type: :model do
         bet.update!(amount: 200)
         expect(redis).to have_received(:publish).with('bet_updated', bet.to_json)
       end
-
-     
     end
 
     context 'after destroy' do

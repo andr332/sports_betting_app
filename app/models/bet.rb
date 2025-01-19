@@ -7,9 +7,9 @@ class Bet < ApplicationRecord
   validates :amount, presence: true, numericality: { greater_than: 0 }
   validates :odds, presence: true, numericality: { greater_than: 0 }
   validates :status, presence: true, inclusion: { in: %w[pending completed canceled lost won] }
-
-
   validates :predicted_outcome, presence: true, inclusion: { in: ->(_bet) { ResultType.pluck(:name) } }
+
+  validate :odds_cannot_exceed_event_odds
 
   after_commit :publish_bet_created, on: :create
   after_commit :publish_bet_updated, on: :update
@@ -20,6 +20,14 @@ class Bet < ApplicationRecord
   end
 
   private
+
+  def odds_cannot_exceed_event_odds
+    return unless event
+
+    if odds > event.odds
+      errors.add(:odds, "cannot be higher than the event's odds (#{event.odds})")
+    end
+  end
 
   def set_default_status
     self.status ||= 'pending'
