@@ -1,0 +1,11 @@
+Suspicious Betting Activity Detected
+
+Dear <%= @user.name %>,
+
+We have detected suspicious betting activity on your account. Below are the details of the suspicious bets:
+
+<% @suspicious_bets.each do |bet| %>
+- Bet ID: <%= bet.id %>, Amount: <%= bet.amount %>, Outcome: <%= bet.predicted_outcome %>
+<% end %>
+
+If you believe this is a mistake, please contact our support team.

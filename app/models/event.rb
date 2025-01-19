@@ -7,7 +7,7 @@ class Event < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[upcoming ongoing completed] }
   validates :result, inclusion: { in: ->(event) { ResultType.pluck(:name) } }, allow_nil: true
 
-  # Prevent setting a result unless event is completed
+
   validate :result_can_only_be_set_for_completed_event
   before_save :prevent_early_result_assignment
 
@@ -22,21 +22,21 @@ class Event < ApplicationRecord
 
   private
 
-  ## 🔥 **Fix 1: Ensure result can only be set when the event is completed**
+
   def result_can_only_be_set_for_completed_event
     if result.present? && status != 'completed'
       errors.add(:result, "can only be set when the event is completed")
     end
   end
 
-  ## 🔥 **Fix 2: Prevent assigning `result` before `completed` status**
+
   def prevent_early_result_assignment
     if status != 'completed' && result.present?
       self.result = nil
     end
   end
 
-  ## 🔥 **Fix 3: Publish Redis events with better error handling**
+
   def publish_event_created
     safe_publish_to_redis('event_created', to_json)
   end
@@ -56,7 +56,6 @@ class Event < ApplicationRecord
     Rails.logger.error("Redis publish error: #{e.message}")
   end
 
-  ## 🔥 **Fix 4: Process bets correctly when an event is completed**
   def process_bet_results
     return unless result.present? && status == 'completed'
 
@@ -81,6 +80,9 @@ class Event < ApplicationRecord
 
           ProcessWinningsJob.perform_async(bet.user_id, winnings.to_f)
           safe_publish_to_redis('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
+
+          # Call Fraud Detection Service here
+          FraudDetectionWorker.perform_async(bet.user_id) # This triggers the fraud detection in the background
         end
       else
         Rails.logger.error("Failed to update bet #{bet.id}: #{bet.errors.full_messages.join(', ')}")
@@ -88,7 +90,8 @@ class Event < ApplicationRecord
     end
   end
 
-  ## 🔥 **Fix 5: Only mark event as completed when start time has passed**
+
+
   def update_status_based_on_time
     return if invalid?
 

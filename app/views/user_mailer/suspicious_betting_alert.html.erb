@@ -1,0 +1,11 @@
+<h1>Suspicious Betting Activity Detected</h1>
+<p>Dear <%= @user.name %>,</p>
+<p>We have detected suspicious betting activity on your account. Below are the details of the suspicious bets:</p>
+
+<ul>
+  <% @suspicious_bets.each do |bet| %>
+    <li>Bet ID: <%= bet.id %>, Amount: <%= bet.amount %>, Outcome: <%= bet.predicted_outcome %></li>
+  <% end %>
+</ul>
+
+<p>If you believe this is a mistake, please contact our support team.</p>
