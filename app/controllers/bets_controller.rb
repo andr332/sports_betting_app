@@ -10,7 +10,7 @@ class BetsController < ApplicationController
     )
   end
 
-  # Fetch all bets for a specific user (Admin or privileged access)
+
   def user_bets
     user = User.find_by(id: params[:user_id])
 
@@ -41,17 +41,30 @@ class BetsController < ApplicationController
 
 
   def create
+    event = Event.find_by(id: bet_params[:event_id])
+
+    if event.nil?
+      return render json: { errors: ["Event not found"] }, status: :unprocessable_entity 
+    end
+
     @bet = current_user.bets.new(bet_params)
 
-    if @bet.save
-      render json: @bet.as_json(
-        only: [:id, :amount, :odds, :status, :predicted_outcome],
-        include: { event: { only: [:name, :result] } }
-      ), status: :created
+    # Ensure the user has enough balance before saving the bet
+    if current_user.debit(@bet.amount)
+      if @bet.save
+        render json: @bet.as_json(
+          only: [:id, :amount, :odds, :status, :predicted_outcome],
+          include: { event: { only: [:name, :result] } }
+        ), status: :created
+      else
+        current_user.credit(@bet.amount)
+        render json: { errors: @bet.errors.full_messages }, status: :unprocessable_entity
+      end
     else
-      render json: { errors: @bet.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: ["Insufficient balance"] }, status: :unprocessable_entity
     end
   end
+
 
   private
 

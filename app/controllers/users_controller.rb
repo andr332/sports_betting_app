@@ -11,7 +11,8 @@ class UsersController < ApplicationController
         user: {
           id: user.id,
           name: user.name,
-          email: user.email
+          email: user.email,
+          balance: user.balance
         }
       }, status: :created
     else
@@ -19,11 +20,13 @@ class UsersController < ApplicationController
     end
   end
 
+
   def profile
     render json: {
       id: @current_user.id,
       name: @current_user.name,
-      email: @current_user.email
+      email: @current_user.email,
+      balance: @current_user.balance
     }
   end
 

@@ -21,13 +21,17 @@ RSpec.describe Event, type: :model do
     it { should validate_presence_of(:status) }
     it { should validate_inclusion_of(:status).in_array(%w[upcoming ongoing completed]) }
 
-    it 'does not allow result unless event is completed' do
-      event = build(:event, status: 'ongoing', result: 'win')
-      expect(event).not_to be_valid
-      expect(event.errors[:result]).to include('can only be set when the event is completed')
+    context 'result validation' do
+      it 'does not allow result unless event is completed' do
+        event = build(:event, status: 'ongoing', result: 'win')
+        expect(event).not_to be_valid
+        expect(event.errors[:result]).to include('can only be set when the event is completed')
+      end
 
-      event.status = 'completed'
-      expect(event).to be_valid
+      it 'allows result when the event is completed' do
+        event = build(:event, status: 'completed', result: 'win')
+        expect(event).to be_valid  
+      end
     end
   end
 
@@ -51,7 +55,7 @@ RSpec.describe Event, type: :model do
 
     context 'when event is completed' do
       let(:event) { create(:event, status: 'ongoing', result: nil) }
-      let!(:bet) { create(:bet, event: event, status: 'pending', predicted_outcome: 'win') }  # ✅ Fixed status
+      let!(:bet) { create(:bet, event: event, status: 'pending', predicted_outcome: 'win') }
 
       it 'does not allow updating result unless completed' do
         expect {

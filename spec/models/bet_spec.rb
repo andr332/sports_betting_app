@@ -2,13 +2,12 @@ require 'rails_helper'
 
 RSpec.describe Bet, type: :model do
   let(:redis) { instance_double(Redis) }
-  let(:user) { create(:user) }
+  let(:user) { create(:user, balance: 1000) }
 
   before do
     allow(Redis).to receive(:new).and_return(redis)
     allow(redis).to receive(:publish)
 
-    # Seed ResultType before creating an event
     allow(ResultType).to receive(:pluck).with(:name).and_return(%w[win lose draw penalty])
   end
 
@@ -30,12 +29,12 @@ RSpec.describe Bet, type: :model do
 
     context 'custom validation - odds cannot exceed event odds' do
       it 'is valid when odds are less than or equal to event odds' do
-        bet.odds = 3.0  # Setting odds equal to event odds
+        bet.odds = 3.0
         expect(bet).to be_valid
       end
 
       it 'is invalid when odds exceed event odds' do
-        bet.odds = 3.5  # Setting odds higher than event odds
+        bet.odds = 3.5
         expect(bet).not_to be_valid
         expect(bet.errors[:odds]).to include("cannot be higher than the event's odds (3.0)")
       end
@@ -43,6 +42,18 @@ RSpec.describe Bet, type: :model do
   end
 
   describe 'callbacks' do
+    context 'before create' do
+      it 'deducts the user balance when a bet is placed' do
+        expect { bet.save! }.to change { user.reload.balance }.by(-100)
+      end
+
+      it 'does not allow a bet if the user has insufficient balance' do
+        user.update(balance: 50)
+        expect(bet.save).to be false
+        expect(bet.errors[:base]).to include("Insufficient balance")
+      end
+    end
+
     context 'after initialize' do
       it 'sets default status to pending' do
         bet = Bet.new
@@ -84,6 +95,22 @@ RSpec.describe Bet, type: :model do
       bet.predicted_outcome = 'lose'
       bet.save!
       expect(bet.won?).to be false
+    end
+  end
+
+  describe 'bet winnings' do
+    it 'credits the user balance when they win a bet' do
+      bet.save!
+      bet.update(status: "won", winnings: bet.amount * bet.odds)
+
+      expect { bet.user.credit(bet.winnings) }.to change { user.reload.balance }.by(250)
+    end
+
+    it 'does not credit user balance when they lose a bet' do
+      bet.save!
+      bet.update(status: "lost", winnings: 0)
+
+      expect { bet.user.credit(bet.winnings) }.not_to change { user.reload.balance }
     end
   end
 end

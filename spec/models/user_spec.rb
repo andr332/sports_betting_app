@@ -13,6 +13,7 @@ RSpec.describe User, type: :model do
     it { should validate_uniqueness_of(:email).case_insensitive }
     it { should validate_presence_of(:password) }
     it { should validate_length_of(:password).is_at_least(6) }
+    it { should validate_numericality_of(:balance).is_greater_than_or_equal_to(0) } 
   end
 
   describe 'associations' do
@@ -25,6 +26,30 @@ RSpec.describe User, type: :model do
       user = create(:user, password: 'securepassword')
       expect(user.authenticate('securepassword')).to eq(user)
       expect(user.authenticate('wrongpassword')).to be_falsey
+    end
+  end
+
+  describe 'default balance' do
+    it 'assigns a default balance of 1000 when a user is created' do
+      user = create(:user)
+      expect(user.balance).to eq(1000)
+    end
+  end
+
+  describe 'balance transactions' do
+    let(:user) { create(:user, balance: 1000) }
+
+    it 'deducts balance when a user places a bet' do
+      expect { user.debit(100) }.to change { user.reload.balance }.by(-100)
+    end
+
+    it 'does not allow a debit if balance is insufficient' do
+      expect(user.debit(2000)).to be false
+      expect(user.reload.balance).to eq(1000)
+    end
+
+    it 'credits balance when a user wins a bet' do
+      expect { user.credit(500) }.to change { user.reload.balance }.by(500)
     end
   end
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_01_16_234604) do
+ActiveRecord::Schema.define(version: 2025_01_19_221228) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -64,6 +64,7 @@ ActiveRecord::Schema.define(version: 2025_01_16_234604) do
     t.string "password_digest"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.decimal "balance", precision: 10, scale: 2, default: "1000.0", null: false
   end
 
   add_foreign_key "bets", "events"

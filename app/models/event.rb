@@ -26,6 +26,7 @@ class Event < ApplicationRecord
   def result_can_only_be_set_for_completed_event
     if result.present? && status != 'completed'
       errors.add(:result, "can only be set when the event is completed")
+      throw(:abort) 
     end
   end
 
@@ -71,6 +72,11 @@ class Event < ApplicationRecord
         safe_publish_to_redis('bet_status_updated', { bet_id: bet.id, status: new_status }.to_json)
 
         if new_status == 'won'
+          User.transaction do
+            bet.user.lock!
+            bet.user.credit(winnings)
+          end
+
           leaderboard = Leaderboard.find_or_initialize_by(user_id: bet.user_id)
           leaderboard.total_winnings ||= 0
           leaderboard.total_winnings += winnings
@@ -82,13 +88,14 @@ class Event < ApplicationRecord
           safe_publish_to_redis('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
 
           # Call Fraud Detection Service here
-          FraudDetectionWorker.perform_async(bet.user_id) # This triggers the fraud detection in the background
+          FraudDetectionWorker.perform_async(bet.user_id)
         end
       else
         Rails.logger.error("Failed to update bet #{bet.id}: #{bet.errors.full_messages.join(', ')}")
       end
     end
   end
+
 
 
 

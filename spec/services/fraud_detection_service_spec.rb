@@ -1,7 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe FraudDetectionService, type: :service do
-  let(:user) { create(:user) }
+  let(:user) { create(:user, balance: 10_000.0) }
+
 
   before do
     %w[win lose draw penalty].each do |name|

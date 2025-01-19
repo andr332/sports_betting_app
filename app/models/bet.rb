@@ -11,6 +11,8 @@ class Bet < ApplicationRecord
 
   validate :odds_cannot_exceed_event_odds
 
+  before_create :deduct_balance
+
   after_commit :publish_bet_created, on: :create
   after_commit :publish_bet_updated, on: :update
   after_destroy :publish_bet_deleted
@@ -21,11 +23,20 @@ class Bet < ApplicationRecord
 
   private
 
+  # Ensure odds do not exceed event odds
   def odds_cannot_exceed_event_odds
     return unless event
 
     if odds > event.odds
       errors.add(:odds, "cannot be higher than the event's odds (#{event.odds})")
+    end
+  end
+
+  # Deduct user balance before placing a bet
+  def deduct_balance
+    unless user.debit(amount) # Calls `debit` method from User model
+      errors.add(:base, "Insufficient balance")
+      throw(:abort) # Prevents bet from being created
     end
   end
 

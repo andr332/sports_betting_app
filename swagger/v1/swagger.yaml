@@ -409,6 +409,50 @@
         }
       }
     },
+    "/results/bulk_create": {
+      "post": {
+        "summary": "Bulk create result types",
+        "tags": [
+          "Results"
+        ],
+        "parameters": [
+
+        ],
+        "responses": {
+          "201": {
+            "description": "result types created successfully"
+          },
+          "422": {
+            "description": "unprocessable entity (invalid input)"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "result_types": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "goal",
+                      "foul",
+                      "own_goal"
+                    ]
+                  }
+                },
+                "required": [
+                  "result_types"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/signup": {
       "post": {
         "summary": "User Signup",

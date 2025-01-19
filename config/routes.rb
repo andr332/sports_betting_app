@@ -1,6 +1,9 @@
 Rails.application.routes.draw do
-  # Use `resources` to follow RESTful conventions
-  resources :results, only: [:index]
+  resources :results, only: [:index] do
+    collection do
+      post :bulk_create  
+    end
+  end
 
   # Swagger API Documentation
   mount Rswag::Api::Engine => '/api-docs'
