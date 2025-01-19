@@ -34,9 +34,9 @@ class Bet < ApplicationRecord
 
   # Deduct user balance before placing a bet
   def deduct_balance
-    unless user.debit(amount) # Calls `debit` method from User model
+    unless user.debit(amount)
       errors.add(:base, "Insufficient balance")
-      throw(:abort) # Prevents bet from being created
+      throw(:abort) 
     end
   end
 

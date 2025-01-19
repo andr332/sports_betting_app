@@ -110,7 +110,7 @@ class EventsController < ApplicationController
 
     event.bets.each do |bet|
       new_status = bet.predicted_outcome == event.result ? 'won' : 'lost'
-      winnings = new_status == 'won' ? bet.amount.to_f * bet.odds.to_f : 0.0  # Convert winnings to float
+      winnings = new_status == 'won' ? bet.amount.to_f * bet.odds.to_f : 0.0  
 
       if bet.update(status: new_status, winnings: winnings)
         Rails.logger.info("Bet #{bet.id} updated to #{new_status} with winnings: #{winnings}")

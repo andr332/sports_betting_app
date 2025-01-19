@@ -8,7 +8,7 @@ class ResultsController < ApplicationController
   end
 
   def bulk_create
-    result_names = params[:result_types] # Expecting an array of names
+    result_names = params[:result_types]
     return render json: { error: "result_types must be an array with at least one value" }, status: :unprocessable_entity if result_names.nil? || result_names.empty?
 
     created_results = []
@@ -16,11 +16,9 @@ class ResultsController < ApplicationController
 
     result_names.each do |name|
       begin
-        # Find or create the result type
         result = ResultType.find_or_create_by!(name: name)
         created_results << result
       rescue ActiveRecord::RecordInvalid => e
-        # If the result already exists, skip or log the error
         errors << { name: name, errors: e.message }
       end
     end
