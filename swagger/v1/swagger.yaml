@@ -341,6 +341,9 @@
           "200": {
             "description": "result updated successfully"
           },
+          "422": {
+            "description": "cannot update result if event is not completed"
+          },
           "404": {
             "description": "event not found"
           }
