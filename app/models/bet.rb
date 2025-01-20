@@ -36,7 +36,7 @@ class Bet < ApplicationRecord
   def deduct_balance
     unless user.debit(amount)
       errors.add(:base, "Insufficient balance")
-      throw(:abort) 
+      throw(:abort)
     end
   end
 

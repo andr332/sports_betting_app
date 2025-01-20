@@ -7,14 +7,13 @@ class Event < ApplicationRecord
   validates :status, presence: true, inclusion: { in: %w[upcoming ongoing completed] }
   validates :result, inclusion: { in: ->(event) { ResultType.pluck(:name) } }, allow_nil: true
 
-
   validate :result_can_only_be_set_for_completed_event
   before_save :prevent_early_result_assignment
 
   after_commit :publish_event_created, on: :create
   after_commit :publish_event_updated, on: :update
   after_destroy :publish_event_deleted
-  after_update :process_bet_results, if: -> { saved_change_to_status? && status == 'completed' }
+  after_update :process_bet_results, if: -> { saved_change_to_status? && status_previously_was != 'completed' && status == 'completed' }
 
   def bets_count
     bets.count
@@ -22,21 +21,18 @@ class Event < ApplicationRecord
 
   private
 
-
   def result_can_only_be_set_for_completed_event
     if result.present? && status != 'completed'
       errors.add(:result, "can only be set when the event is completed")
-      throw(:abort) 
+      throw(:abort)
     end
   end
-
 
   def prevent_early_result_assignment
     if status != 'completed' && result.present?
       self.result = nil
     end
   end
-
 
   def publish_event_created
     safe_publish_to_redis('event_created', to_json)
@@ -62,14 +58,25 @@ class Event < ApplicationRecord
 
     Rails.logger.info("Processing bets for event #{id}. Result: #{result}")
 
+    redis = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379'))
+
     bets.each do |bet|
+      if bet.status == 'won'
+        Rails.logger.warn("Skipping bet #{bet.id}, already won!")
+        next
+      end
+
       new_status = bet.predicted_outcome == result ? 'won' : 'lost'
       winnings = new_status == 'won' ? bet.amount * bet.odds : 0
 
-      if bet.update(status: new_status, winnings: winnings)
-        Rails.logger.info("Bet #{bet.id} updated to #{new_status} with winnings: #{winnings}")
+      Rails.logger.info("Updating bet #{bet.id} from #{bet.status} to #{new_status} with winnings: #{winnings}")
 
-        safe_publish_to_redis('bet_status_updated', { bet_id: bet.id, status: new_status }.to_json)
+      if bet.update(status: new_status, winnings: winnings)
+        Rails.logger.info("Bet #{bet.id} successfully updated to #{new_status}")
+
+
+        Rails.logger.info("Publishing to Redis: bet_status_updated - { bet_id: #{bet.id}, status: #{new_status} }")
+        redis.publish('bet_status_updated', { bet_id: bet.id, status: new_status }.to_json)
 
         if new_status == 'won'
           User.transaction do
@@ -77,18 +84,30 @@ class Event < ApplicationRecord
             bet.user.credit(winnings)
           end
 
-          leaderboard = Leaderboard.find_or_initialize_by(user_id: bet.user_id)
-          leaderboard.total_winnings ||= 0
-          leaderboard.total_winnings += winnings
-          leaderboard.save!
+          leaderboard = nil
 
-          Rails.logger.info("Leaderboard for user #{bet.user_id} updated. Total winnings: #{leaderboard.total_winnings}")
+          Leaderboard.transaction do
+            leaderboard = Leaderboard.lock.find_or_initialize_by(user_id: bet.user_id)
 
-          ProcessWinningsJob.perform_async(bet.user_id, winnings.to_f)
-          safe_publish_to_redis('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
+            # Prevent adding winnings multiple times
+            if leaderboard.total_winnings && leaderboard.total_winnings >= winnings
+              Rails.logger.warn("Skipping leaderboard update for user #{bet.user_id}, already recorded winnings!")
+            else
+              leaderboard.total_winnings ||= 0
+              leaderboard.total_winnings += winnings
+              leaderboard.save!
+            end
+          end
 
-          # Call Fraud Detection Service here
-          FraudDetectionWorker.perform_async(bet.user_id)
+          Rails.logger.info("Leaderboard updated for user #{bet.user_id}, Total winnings: #{leaderboard.total_winnings}")
+
+
+          Rails.logger.info("Publishing to Redis: leaderboard_updated - { user_id: #{bet.user_id}, total_winnings: #{leaderboard.total_winnings} }")
+          redis.publish('leaderboard_updated', { user_id: bet.user_id, total_winnings: leaderboard.total_winnings.to_f }.to_json)
+
+
+          Rails.logger.info("Publishing to Redis: bet_winning_updated - { user_id: #{bet.user_id}, winnings: #{winnings.to_f}, bet_id: #{bet.id} }")
+          redis.publish('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
         end
       else
         Rails.logger.error("Failed to update bet #{bet.id}: #{bet.errors.full_messages.join(', ')}")
