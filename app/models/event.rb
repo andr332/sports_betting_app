@@ -74,6 +74,8 @@ class Event < ApplicationRecord
       if bet.update(status: new_status, winnings: winnings)
         Rails.logger.info("Bet #{bet.id} successfully updated to #{new_status}")
 
+        # CALL FRAUD DETECTION AFTER UPDATING BET STATUS
+        FraudDetectionService.new(bet.user).analyze_betting_patterns
 
         Rails.logger.info("Publishing to Redis: bet_status_updated - { bet_id: #{bet.id}, status: #{new_status} }")
         redis.publish('bet_status_updated', { bet_id: bet.id, status: new_status }.to_json)
@@ -89,7 +91,6 @@ class Event < ApplicationRecord
           Leaderboard.transaction do
             leaderboard = Leaderboard.lock.find_or_initialize_by(user_id: bet.user_id)
 
-            # Prevent adding winnings multiple times
             if leaderboard.total_winnings && leaderboard.total_winnings >= winnings
               Rails.logger.warn("Skipping leaderboard update for user #{bet.user_id}, already recorded winnings!")
             else
@@ -101,10 +102,8 @@ class Event < ApplicationRecord
 
           Rails.logger.info("Leaderboard updated for user #{bet.user_id}, Total winnings: #{leaderboard.total_winnings}")
 
-
           Rails.logger.info("Publishing to Redis: leaderboard_updated - { user_id: #{bet.user_id}, total_winnings: #{leaderboard.total_winnings} }")
           redis.publish('leaderboard_updated', { user_id: bet.user_id, total_winnings: leaderboard.total_winnings.to_f }.to_json)
-
 
           Rails.logger.info("Publishing to Redis: bet_winning_updated - { user_id: #{bet.user_id}, winnings: #{winnings.to_f}, bet_id: #{bet.id} }")
           redis.publish('bet_winning_updated', { user_id: bet.user_id, winnings: winnings.to_f, bet_id: bet.id }.to_json)
